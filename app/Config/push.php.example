@@ -1,15 +1,12 @@
 <?php
 /**
  * Configuración de Web Push (VAPID).
- * Copiá este archivo como push.php y completá los valores reales.
+ * Copiá este archivo como push.php para activar notificaciones push.
  *   cp app/Config/push.php.example app/Config/push.php
- *
- * Para generar las claves VAPID:
- *   php tools/generate-vapid-keys.php
  */
 return [
-    'enabled'           => false,   // Cambiar a true después de configurar las claves
-    'vapid_subject'     => 'mailto:tu@email.com',
-    'vapid_public_b64'  => '',      // Pegar la clave pública generada por generate-vapid-keys.php
-    'vapid_private_pem' => '',      // Pegar la clave privada generada por generate-vapid-keys.php
+    'enabled'           => false,   // Cambiar a true cuando quieras activar push
+    'vapid_subject'     => 'mailto:gabriel@feippe.com',
+    'vapid_public_b64'  => 'BIe_n5O0ZbABpUSxwgvbvx4ICpoBFCmKU2OOBQsYVmw3zH7QNvpOPzXZ80omJyZSbVGjTAAfcHt9VrJCkXQlt5M',
+    'vapid_private_pem' => '-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgtSm+DRELdUzs6/7t\nSacCVhCVLnXORnQ5xYgm4A4AsmihRANCAASHv5+TtGWwAaVEscIL278eCAqaARQp\nilNjjgULGFZsN8x+0Db6Tj812fNKJicmUm1Ro0wAH3B7fVayQpF0JbeT\n-----END PRIVATE KEY-----',
 ];
