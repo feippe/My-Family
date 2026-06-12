@@ -1,4 +1,4 @@
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '__APP_VERSION__';
 const CACHE_NAME  = 'familycal-v2';
 const STATIC_ASSETS = [
   '/',

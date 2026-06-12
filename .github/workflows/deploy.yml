@@ -17,6 +17,12 @@ jobs:
         with:
           fetch-depth: 0   # full history so FTP action can diff
 
+      - name: Inject app version
+        run: |
+          VERSION="$(date -u +'%Y.%m.%d')-$(git rev-parse --short HEAD)"
+          sed -i "s/__APP_VERSION__/${VERSION}/g" public_html/service-worker.js
+          echo "APP_VERSION=${VERSION}" >> $GITHUB_STEP_SUMMARY
+
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
