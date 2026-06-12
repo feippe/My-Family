@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS events (
     updated_at       DATETIME     NOT NULL,
     FOREIGN KEY (group_id)    REFERENCES family_groups(id) ON DELETE CASCADE,
     FOREIGN KEY (creator_id)  REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (category_id) REFERENCES categories(id) ON SET NULL,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
     INDEX idx_group_start (group_id, start_datetime),
     INDEX idx_recurring (group_id, is_recurring)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
