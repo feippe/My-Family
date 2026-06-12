@@ -1015,6 +1015,7 @@ img, svg { display: block; }
 
 #calendar {
   flex: 1;
+  min-height: 0; /* required for flex children to shrink below content size */
   overflow: hidden;
   padding: 12px 20px 16px;
 }
@@ -1071,6 +1072,8 @@ img, svg { display: block; }
 .fc-timegrid-event .fc-event-main { padding: 3px 6px; }
 .fc-list-event-title a { color: var(--text-1) !important; }
 .fc-list-event td { padding: 10px 14px; }
+.fc .fc-list-empty { background: transparent; }
+.fc .fc-list-empty-cushion { color: var(--text-3); }
 .fc .fc-timegrid-slot { height: 40px; }
 .fc .fc-scrollgrid { border-radius: var(--r); overflow: hidden; }
 .fc .fc-view-harness { background: var(--bg-surface); border-radius: var(--r); border: 1px solid var(--border-muted); }
@@ -1187,8 +1190,9 @@ img, svg { display: block; }
 
   .calendar-page { height: calc(100vh - var(--topbar-h) - var(--bn-h)); }
   #calendar { padding: 8px 12px 0; }
-  .cal-toolbar { padding: 8px 12px; gap: 8px; }
-  .cal-views { display: none; }
+  .cal-toolbar { padding: 8px 12px; gap: 8px; flex-wrap: nowrap; }
+  .cal-views { gap: 1px; }
+  .cal-views .view-btn { padding: 4px 8px; font-size: 0.72rem; }
   .cal-title { font-size: 0.95rem; }
   .hide-xs { display: none; }
 

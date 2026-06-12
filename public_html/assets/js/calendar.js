@@ -412,16 +412,17 @@
   if (!el || typeof FullCalendar === 'undefined') return;
 
   const calendar = new FullCalendar.Calendar(el, {
-    locale:         'es',
-    initialView:    window.innerWidth < 640 ? 'listWeek' : 'dayGridMonth',
-    firstDay:       1, // Monday
-    headerToolbar:  false,
-    height:         '100%',
-    nowIndicator:   true,
-    editable:       false,
-    selectable:     true,
-    dayMaxEvents:   4,
-    eventDisplay:   'block',
+    locale:           'es',
+    initialView:      'dayGridMonth',
+    firstDay:         1,
+    headerToolbar:    false,
+    height:           '100%',
+    nowIndicator:     true,
+    editable:         false,
+    selectable:       true,
+    dayMaxEvents:     4,
+    eventDisplay:     'block',
+    noEventsContent:  'Sin eventos',
 
     events: function(info, successCb, failureCb) {
       const url = APP_URL + `/api/events?start=${info.startStr}&end=${info.endStr}`;
