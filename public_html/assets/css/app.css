@@ -794,6 +794,8 @@ img, svg { display: block; }
 
 .settings-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 24px; }
 .settings-section-title { font-size: 1rem; font-weight: 700; margin-bottom: 20px; }
+.app-version-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.app-version-value { font-size: .95rem; font-weight: 600; color: var(--primary-light); font-variant-numeric: tabular-nums; }
 .profile-avatar-row { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
 
 .empty-state {

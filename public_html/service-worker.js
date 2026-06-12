@@ -1,4 +1,5 @@
-const CACHE_NAME = 'familycal-v2';
+const APP_VERSION = '1.0.0';
+const CACHE_NAME  = 'familycal-v2';
 const STATIC_ASSETS = [
   '/',
   '/assets/css/app.css',
@@ -45,6 +46,16 @@ self.addEventListener('fetch', event => {
       return response;
     }))
   );
+});
+
+/* ── Version query ───────────────────────────────── */
+self.addEventListener('message', event => {
+  if (event.data?.type === 'GET_VERSION') {
+    event.ports[0]?.postMessage({ version: APP_VERSION });
+  }
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 /* ── Push notifications ──────────────────────────── */
