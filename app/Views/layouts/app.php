@@ -17,8 +17,7 @@ $pgTitle = $pageTitle ?? 'FamilyCal';
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<!-- FullCalendar -->
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+<!-- FullCalendar v6 inyecta sus estilos vía JS, no requiere CSS separado -->
 <link rel="stylesheet" href="<?= $appUrl ?>/assets/css/app.css">
 </head>
 <body>
@@ -97,6 +96,12 @@ $pgTitle = $pageTitle ?? 'FamilyCal';
             </div>
             <div class="notif-list" id="notifList">
               <div class="notif-empty">Sin notificaciones</div>
+            </div>
+            <div class="notif-panel-footer" id="pushEnableBanner" style="display:none">
+              <button class="btn-push-enable" id="btnEnablePush">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                Activar notificaciones push
+              </button>
             </div>
           </div>
         </div>

@@ -104,36 +104,63 @@
 
 /* ══════════════════════════════════════════════════
    Push notification subscription
+   requestPermission() MUST be called from a user gesture.
+   We show a banner button inside the notification panel.
 ══════════════════════════════════════════════════ */
 (async function initPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
 
+  const banner  = document.getElementById('pushEnableBanner');
+  const btnEnable = document.getElementById('btnEnablePush');
+  if (!banner || !btnEnable) return;
+
+  let vapidKey = null;
+
   try {
     const vapid = await fc_api('GET', APP_URL + '/api/push/vapid-key');
     if (!vapid.enabled || !vapid.public_key) return;
+    vapidKey = vapid.public_key;
 
-    const reg = await navigator.serviceWorker.ready;
+    const reg      = await navigator.serviceWorker.ready;
     const existing = await reg.pushManager.getSubscription();
-    if (existing) return; // already subscribed
 
-    // Request permission on user gesture (only prompt once)
-    if (Notification.permission === 'default') {
-      const perm = await Notification.requestPermission();
-      if (perm !== 'granted') return;
+    // Already subscribed — nothing to do
+    if (existing) return;
+
+    // Permission already denied — don't bother showing the button
+    if (Notification.permission === 'denied') return;
+
+    // Already granted but no subscription yet — subscribe silently
+    if (Notification.permission === 'granted') {
+      await doSubscribe(reg, vapidKey);
+      return;
     }
-    if (Notification.permission !== 'granted') return;
 
+    // Default: show the banner button so user can grant from a gesture
+    banner.style.display = 'flex';
+  } catch(e) {}
+
+  btnEnable.addEventListener('click', async () => {
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') { banner.style.display = 'none'; return; }
+      const reg = await navigator.serviceWorker.ready;
+      await doSubscribe(reg, vapidKey);
+      banner.style.display = 'none';
+    } catch(e) {}
+  });
+
+  async function doSubscribe(reg, publicKey) {
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlB64ToUint8(vapid.public_key),
+      applicationServerKey: urlB64ToUint8(publicKey),
     });
-
     const subJson = sub.toJSON();
     await fc_api('POST', APP_URL + '/api/push/subscribe', {
       endpoint: subJson.endpoint,
       keys:     subJson.keys,
     });
-  } catch(e) {}
+  }
 
   function urlB64ToUint8(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);

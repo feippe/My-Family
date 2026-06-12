@@ -916,6 +916,28 @@ img, svg { display: block; }
 .notif-title-text { font-size: .85rem; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .notif-body-text  { font-size: .78rem; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .notif-time       { font-size: .72rem; color: var(--text-3); margin-top: 3px; white-space: nowrap; }
+.notif-panel-footer {
+  border-top: 1px solid var(--border-muted);
+  padding: 10px 12px;
+  flex-shrink: 0;
+}
+.btn-push-enable {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--primary-dim);
+  color: var(--primary-light);
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+  border-radius: var(--r);
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.btn-push-enable:hover { background: color-mix(in srgb, var(--primary) 25%, transparent); }
 
 /* ── Recurring scope dialog ──────────────────────── */
 .radio-option-row {
