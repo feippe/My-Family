@@ -1,0 +1,19 @@
+<?php
+/**
+ * Configuración de email.
+ * Copiá este archivo como mail.php y completá los valores reales.
+ *   cp app/Config/mail.php.example app/Config/mail.php
+ */
+return [
+    'enabled'    => false,          // Cambiar a true después de configurar
+    'driver'     => 'smtp',         // 'smtp' o 'mail' (mail() nativo de PHP)
+    'from_email' => 'no-reply@tudominio.com',
+    'from_name'  => 'FamilyCal',
+    'smtp' => [
+        'host'     => 'smtp.tudominio.com',
+        'port'     => 587,
+        'secure'   => 'tls',        // 'tls', 'ssl' o '' (sin cifrado)
+        'user'     => 'tu_usuario_smtp',
+        'password' => 'tu_password_smtp',
+    ],
+];

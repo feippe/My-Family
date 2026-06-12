@@ -1,0 +1,15 @@
+<?php
+/**
+ * Configuración de Web Push (VAPID).
+ * Copiá este archivo como push.php y completá los valores reales.
+ *   cp app/Config/push.php.example app/Config/push.php
+ *
+ * Para generar las claves VAPID:
+ *   php tools/generate-vapid-keys.php
+ */
+return [
+    'enabled'           => false,   // Cambiar a true después de configurar las claves
+    'vapid_subject'     => 'mailto:tu@email.com',
+    'vapid_public_b64'  => '',      // Pegar la clave pública generada por generate-vapid-keys.php
+    'vapid_private_pem' => '',      // Pegar la clave privada generada por generate-vapid-keys.php
+];
