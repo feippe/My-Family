@@ -82,7 +82,25 @@ $pgTitle = $pageTitle ?? 'FamilyCal';
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <div class="top-bar-title" id="topBarTitle"><?= \App\Core\View::e($pgTitle) ?></div>
-      <div class="top-bar-actions" id="topBarActions"></div>
+      <div class="top-bar-actions" id="topBarActions">
+        <!-- Notification bell -->
+        <div class="notif-bell-wrap" id="notifBellWrap">
+          <button class="btn-icon notif-bell" id="notifBell" aria-label="Notificaciones">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+          </button>
+          <!-- Notification panel -->
+          <div class="notif-panel" id="notifPanel" style="display:none">
+            <div class="notif-panel-header">
+              <span class="notif-panel-title">Notificaciones</span>
+              <button class="btn-text btn-sm" id="markAllRead">Marcar todas</button>
+            </div>
+            <div class="notif-list" id="notifList">
+              <div class="notif-empty">Sin notificaciones</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </header>
 
     <main class="page-content">
@@ -123,6 +141,7 @@ $pgTitle = $pageTitle ?? 'FamilyCal';
 </script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 <script src="<?= $appUrl ?>/assets/js/app.js"></script>
+<script src="<?= $appUrl ?>/assets/js/notifications.js"></script>
 <?php if (!empty($pageScripts)): ?>
   <?php foreach ($pageScripts as $s): ?>
     <script src="<?= $appUrl ?>/assets/js/<?= \App\Core\View::e($s) ?>"></script>

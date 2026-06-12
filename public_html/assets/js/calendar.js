@@ -112,6 +112,7 @@
   if (!overlay) return;
 
   let editingId = null;
+  let currentInstanceDate = null;
 
   // Visibility
   document.querySelectorAll('.vis-btn').forEach(btn => {
@@ -242,6 +243,7 @@
     if (eventData) {
       // Edit mode
       editingId = eventData.event_id;
+      currentInstanceDate = eventData.extendedProps?.instance_date || null;
       title.textContent  = 'Editar evento';
       saveTxt.textContent = 'Guardar cambios';
       delBtn.style.display = '';
@@ -304,11 +306,32 @@
   overlay.addEventListener('click', e => { if (!document.getElementById('eventModal').contains(e.target)) overlay.classList.remove('open'); });
 
   delBtn?.addEventListener('click', async () => {
-    if (!editingId || !confirm('¿Eliminar este evento?')) return;
+    if (!editingId) return;
+    const isRecurring = document.getElementById('evRecurring').checked;
+
+    if (isRecurring) {
+      // Show scope dialog for deletion
+      window._recurScopeCallback = async (scope) => {
+        try {
+          const body = { scope };
+          if (scope !== 'all') body.instance_date = currentInstanceDate;
+          await fc_api('DELETE', APP_URL + '/api/events/' + editingId, body);
+          overlay.classList.remove('open');
+          window._calendar?.refetchEvents();
+          showToast('Evento eliminado', 'success');
+        } catch(e) { showToast(e.message, 'error'); }
+      };
+      document.getElementById('recurScopeTitle').textContent = 'Eliminar evento recurrente';
+      document.getElementById('recurScopeConfirm').textContent = 'Eliminar';
+      document.getElementById('recurScopeConfirm').className = 'btn btn-danger';
+      document.getElementById('recurScopeOverlay').classList.add('open');
+      return;
+    }
+
+    if (!confirm('¿Eliminar este evento?')) return;
     try {
-      await fc_api('DELETE', APP_URL + '/api/events/' + editingId);
+      await fc_api('DELETE', APP_URL + '/api/events/' + editingId, { scope: 'all' });
       overlay.classList.remove('open');
-      window._calendar?.getEventById(editingId)?.remove();
       window._calendar?.refetchEvents();
       showToast('Evento eliminado', 'success');
     } catch(e) { showToast(e.message, 'error'); }
@@ -320,13 +343,33 @@
     if (!data.title) { showToast('El título es requerido', 'error'); return; }
     if (!document.getElementById('evStartDate').value) { showToast('Seleccioná una fecha', 'error'); return; }
 
+    if (editingId && document.getElementById('evRecurring').checked) {
+      // Show scope dialog for edits
+      window._recurScopeCallback = async (scope) => {
+        data.scope = scope;
+        if (scope !== 'all') data.instance_date = currentInstanceDate;
+        saveBtn.disabled = true;
+        try {
+          const res = await fc_api('PUT', APP_URL + '/api/events/' + editingId, data);
+          overlay.classList.remove('open');
+          window._calendar?.refetchEvents();
+          showToast('Evento actualizado', 'success');
+        } catch(e) { showToast(e.message, 'error'); }
+        finally    { saveBtn.disabled = false; }
+      };
+      document.getElementById('recurScopeTitle').textContent    = 'Editar evento recurrente';
+      document.getElementById('recurScopeConfirm').textContent  = 'Continuar';
+      document.getElementById('recurScopeConfirm').className    = 'btn btn-primary';
+      document.getElementById('recurScopeOverlay').classList.add('open');
+      return;
+    }
+
     saveBtn.disabled = true;
     try {
-      let res;
       if (editingId) {
-        res = await fc_api('PUT', APP_URL + '/api/events/' + editingId, data);
+        await fc_api('PUT', APP_URL + '/api/events/' + editingId, { ...data, scope: 'all' });
       } else {
-        res = await fc_api('POST', APP_URL + '/api/events', data);
+        await fc_api('POST', APP_URL + '/api/events', data);
       }
       overlay.classList.remove('open');
       window._calendar?.refetchEvents();
@@ -335,6 +378,28 @@
       showToast(e.message, 'error');
     } finally {
       saveBtn.disabled = false;
+    }
+  });
+})();
+
+/* ── Recurring scope dialog ──────────────────────── */
+(function initRecurDialog() {
+  const overlay  = document.getElementById('recurScopeOverlay');
+  const confirm  = document.getElementById('recurScopeConfirm');
+  const cancel   = document.getElementById('recurScopeCancel');
+  if (!overlay) return;
+
+  confirm.addEventListener('click', () => {
+    const scope = document.querySelector('[name="rec_scope"]:checked')?.value || 'this';
+    overlay.classList.remove('open');
+    window._recurScopeCallback?.(scope);
+    window._recurScopeCallback = null;
+  });
+  cancel.addEventListener('click', () => { overlay.classList.remove('open'); window._recurScopeCallback = null; });
+  overlay.addEventListener('click', e => {
+    if (!overlay.querySelector('.modal').contains(e.target)) {
+      overlay.classList.remove('open');
+      window._recurScopeCallback = null;
     }
   });
 })();

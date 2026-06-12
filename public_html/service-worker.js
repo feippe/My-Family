@@ -1,9 +1,10 @@
-const CACHE_NAME = 'familycal-v1';
+const CACHE_NAME = 'familycal-v2';
 const STATIC_ASSETS = [
   '/',
   '/assets/css/app.css',
   '/assets/js/app.js',
   '/assets/js/calendar.js',
+  '/assets/js/notifications.js',
 ];
 
 self.addEventListener('install', event => {
@@ -26,7 +27,7 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Network-first for API and HTML
+  // Network-first for API calls and HTML navigation
   if (url.pathname.startsWith('/api/') || request.headers.get('Accept')?.includes('text/html')) {
     event.respondWith(
       fetch(request).catch(() => caches.match(request))
@@ -43,5 +44,41 @@ self.addEventListener('fetch', event => {
       }
       return response;
     }))
+  );
+});
+
+/* ── Push notifications ──────────────────────────── */
+self.addEventListener('push', event => {
+  if (!event.data) return;
+  let data;
+  try { data = event.data.json(); }
+  catch { data = { title: 'FamilyCal', body: event.data.text() }; }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'FamilyCal', {
+      body:    data.body   || '',
+      icon:    '/assets/images/icon-192.png',
+      badge:   '/assets/images/icon-192.png',
+      data:    { url: data.url || '/' },
+      vibrate: [100, 50, 100],
+      tag:     'familycal-event',
+      renotify: true,
+    })
+  );
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const client of list) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) return clients.openWindow(url);
+    })
   );
 });

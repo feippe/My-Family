@@ -1,0 +1,39 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: FTP Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so FTP action can diff
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server:       ${{ secrets.FTP_SERVER }}
+          username:     ${{ secrets.FTP_USER }}
+          password:     ${{ secrets.FTP_PASSWORD }}
+          protocol:     ftp
+          port:         21
+          # Deploy repo root → server home dir (parent of public_html)
+          server-dir:   /
+          local-dir:    ./
+          # Don't overwrite production config files set manually on the server
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .github/**
+            tools/**
+            app/Config/database.php
+            app/Config/push.php
+            app/Config/mail.php
