@@ -409,7 +409,31 @@
 ══════════════════════════════════════════════════ */
 (function initCalendar() {
   const el = document.getElementById('calendar');
-  if (!el || typeof FullCalendar === 'undefined') return;
+  if (!el) return;
+
+  // Wire the toolbar buttons FIRST, so "Nuevo evento" / nav always work
+  // even if FullCalendar fails to load from the CDN.
+  function wireToolbar(calendar) {
+    document.getElementById('addEventBtn')?.addEventListener('click', () => window.openEventModal());
+    document.getElementById('calPrev')?.addEventListener('click',  () => calendar?.prev());
+    document.getElementById('calNext')?.addEventListener('click',  () => calendar?.next());
+    document.getElementById('calToday')?.addEventListener('click', () => calendar?.today());
+    document.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        calendar?.changeView(btn.dataset.view);
+      });
+    });
+  }
+
+  if (typeof FullCalendar === 'undefined') {
+    // CDN didn't load — still let the user create events, and surface the problem.
+    wireToolbar(null);
+    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--text-3)">' +
+      'No se pudo cargar el calendario. Verificá tu conexión y tocá "Actualizar aplicación" en Ajustes.</div>';
+    return;
+  }
 
   const calendar = new FullCalendar.Calendar(el, {
     locale:           'es',
@@ -483,19 +507,7 @@
   calendar.render();
   window._calendar = calendar;
 
-  // Toolbar controls
-  document.getElementById('calPrev')?.addEventListener('click', () => calendar.prev());
-  document.getElementById('calNext')?.addEventListener('click', () => calendar.next());
-  document.getElementById('calToday')?.addEventListener('click', () => calendar.today());
-  document.getElementById('addEventBtn')?.addEventListener('click', () => window.openEventModal());
-
-  document.querySelectorAll('.view-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      calendar.changeView(btn.dataset.view);
-    });
-  });
+  wireToolbar(calendar);
 })();
 
 /* ── Helpers ─────────────────────────────────────── */

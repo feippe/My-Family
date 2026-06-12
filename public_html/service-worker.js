@@ -1,50 +1,38 @@
 const APP_VERSION = '__APP_VERSION__';
-const CACHE_NAME  = 'familycal-v2';
-const STATIC_ASSETS = [
-  '/',
-  '/assets/css/app.css',
-  '/assets/js/app.js',
-  '/assets/js/calendar.js',
-  '/assets/js/notifications.js',
-];
+// Cache name tied to the deploy version → every deploy gets a fresh cache,
+// and the old one is purged on activate. No more stale JS/CSS after a push.
+const CACHE_NAME  = 'familycal-' + APP_VERSION;
 
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
-  );
+self.addEventListener('install', () => {
+  // Activate the new SW immediately without waiting for old tabs to close.
   self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', event => {
   const { request } = event;
+  if (request.method !== 'GET') return;
   const url = new URL(request.url);
 
-  // Network-first for API calls and HTML navigation
-  if (url.pathname.startsWith('/api/') || request.headers.get('Accept')?.includes('text/html')) {
-    event.respondWith(
-      fetch(request).catch(() => caches.match(request))
-    );
-    return;
-  }
-
-  // Cache-first for static assets
+  // Network-first for everything: fresh content when online, cache fallback offline.
+  // Only same-origin successful responses get cached (CDN is left to the HTTP cache).
   event.respondWith(
-    caches.match(request).then(cached => cached || fetch(request).then(response => {
-      if (response.ok && request.method === 'GET') {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-      }
-      return response;
-    }))
+    fetch(request)
+      .then(response => {
+        if (response.ok && url.origin === self.location.origin) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request))
   );
 });
 
