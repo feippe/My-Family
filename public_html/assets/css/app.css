@@ -243,16 +243,13 @@ img, svg { display: block; }
 }
 .bn-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 6px 12px;
+  justify-content: center;
+  padding: 8px 16px;
   border-radius: var(--r-sm);
   color: var(--text-3);
-  font-size: 0.68rem;
-  font-weight: 500;
   transition: all var(--transition);
-  min-width: 52px;
+  min-width: 48px;
 }
 .bn-item.active, .bn-item:hover { color: var(--primary-h); }
 .bn-item.active svg { stroke: var(--primary-h); }
@@ -1074,6 +1071,54 @@ img, svg { display: block; }
 .fc-list-event td { padding: 10px 14px; }
 .fc .fc-list-empty { background: transparent; }
 .fc .fc-list-empty-cushion { color: var(--text-3); }
+
+/* ── Month view: event dots ──────────────────────── */
+/* Fixed event area height so day numbers never shift position */
+.fc-dayGridMonth-view .fc-daygrid-day-events {
+  min-height: 12px;
+  max-height: 12px;
+  overflow: hidden;
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px 4px !important;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 0 !important;
+}
+.fc-dayGridMonth-view .fc-daygrid-event-harness { margin: 0 !important; height: auto; }
+.fc-dayGridMonth-view .fc-daygrid-event {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  min-height: 0 !important;
+  height: auto !important;
+  cursor: pointer;
+}
+.fc-dayGridMonth-view .fc-daygrid-more-link { display: none; }
+.fc-event-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Week view: hide text on mobile ──────────────── */
+@media (max-width: 768px) {
+  .fc-timeGridWeek-view .fc-event-title,
+  .fc-timeGridWeek-view .fc-event-time { display: none; }
+  .fc-timeGridWeek-view .fc-timegrid-event .fc-event-main { padding: 2px !important; }
+}
+/* Week view desktop: show title */
+@media (min-width: 769px) {
+  .fc-timeGridWeek-view .fc-event-title { display: block; font-size: 0.75rem; }
+  .fc-timeGridWeek-view .fc-event-time  { display: block; font-size: 0.7rem; opacity: 0.85; }
+}
+/* Day view: always show full text */
+.fc-timeGridDay-view .fc-event-title { font-size: 0.82rem; }
+.fc-timeGridDay-view .fc-event-time  { font-size: 0.75rem; opacity: 0.85; }
 .fc .fc-timegrid-slot { height: 40px; }
 .fc .fc-scrollgrid { border-radius: var(--r); overflow: hidden; }
 .fc .fc-view-harness { background: var(--bg-surface); border-radius: var(--r); border: 1px solid var(--border-muted); }

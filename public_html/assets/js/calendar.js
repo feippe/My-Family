@@ -444,9 +444,17 @@
     nowIndicator:     true,
     editable:         false,
     selectable:       true,
-    dayMaxEvents:     4,
+    dayMaxEvents:     false,
     eventDisplay:     'block',
     noEventsContent:  'Sin eventos',
+
+    eventContent: function(arg) {
+      if (arg.view.type === 'dayGridMonth') {
+        const color = arg.event.backgroundColor || 'var(--primary)';
+        return { html: `<span class="fc-event-dot" style="background:${color}"></span>` };
+      }
+      // timeGridWeek, timeGridDay, listWeek → default FullCalendar rendering
+    },
 
     events: function(info, successCb, failureCb) {
       const url = APP_URL + `/api/events?start=${info.startStr}&end=${info.endStr}`;
@@ -496,9 +504,10 @@
 
     eventDidMount(info) {
       const p = info.event.extendedProps;
-      if (p.is_recurring) {
+      // Add a small recurring dot indicator on timeGrid views (not on month dots)
+      if (p.is_recurring && info.view.type !== 'dayGridMonth') {
         const dot = document.createElement('span');
-        dot.style.cssText = 'display:inline-block;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.7);margin-right:3px;vertical-align:middle;';
+        dot.style.cssText = 'display:inline-block;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.7);margin-right:3px;vertical-align:middle;flex-shrink:0;';
         info.el.querySelector('.fc-event-title')?.prepend(dot);
       }
     },
