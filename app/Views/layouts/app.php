@@ -3,6 +3,14 @@ $cfg     = require BASE_PATH . '/app/Config/app.php';
 $appUrl  = rtrim($cfg['url'], '/');
 $u       = $currentUser ?? null;
 $pgTitle = $pageTitle ?? 'FamilyCal';
+
+// Cache-busting helper: appends ?v=<filemtime> so a new deploy always
+// produces a fresh URL, bypassing any stale service-worker/browser cache.
+$asset = function (string $path) use ($appUrl) {
+    $file = BASE_PATH . '/public_html/' . ltrim($path, '/');
+    $v    = is_file($file) ? filemtime($file) : time();
+    return "{$appUrl}/" . ltrim($path, '/') . "?v={$v}";
+};
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -18,7 +26,7 @@ $pgTitle = $pageTitle ?? 'FamilyCal';
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- FullCalendar v6 inyecta sus estilos vía JS, no requiere CSS separado -->
-<link rel="stylesheet" href="<?= $appUrl ?>/assets/css/app.css">
+<link rel="stylesheet" href="<?= $asset('assets/css/app.css') ?>">
 </head>
 <body>
 
@@ -141,12 +149,14 @@ $pgTitle = $pageTitle ?? 'FamilyCal';
   const CSRF     = '<?= htmlspecialchars($_SESSION['csrf'] ?? '', ENT_QUOTES) ?>';
   const APP_USER = <?= json_encode(['id' => $u['id'] ?? null, 'name' => $u['name'] ?? '', 'color' => $u['color'] ?? '#7c3aed']) ?>;
 </script>
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-<script src="<?= $appUrl ?>/assets/js/app.js"></script>
-<script src="<?= $appUrl ?>/assets/js/notifications.js"></script>
+<!-- FullCalendar self-hosted (no CDN dependency) -->
+<script src="<?= $asset('assets/vendor/fullcalendar.global.min.js') ?>"></script>
+<script src="<?= $asset('assets/vendor/fullcalendar.locale-es.global.min.js') ?>"></script>
+<script src="<?= $asset('assets/js/app.js') ?>"></script>
+<script src="<?= $asset('assets/js/notifications.js') ?>"></script>
 <?php if (!empty($pageScripts)): ?>
   <?php foreach ($pageScripts as $s): ?>
-    <script src="<?= $appUrl ?>/assets/js/<?= \App\Core\View::e($s) ?>"></script>
+    <script src="<?= $asset('assets/js/' . $s) ?>"></script>
   <?php endforeach; ?>
 <?php endif; ?>
 </body>
