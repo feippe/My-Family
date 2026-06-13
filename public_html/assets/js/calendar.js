@@ -411,112 +411,144 @@
   const el = document.getElementById('calendar');
   if (!el) return;
 
-  // Wire the toolbar buttons FIRST, so "Nuevo evento" / nav always work
-  // even if FullCalendar fails to load from the CDN.
-  function wireToolbar(calendar) {
-    document.getElementById('addEventBtn')?.addEventListener('click', () => window.openEventModal());
-    document.getElementById('calPrev')?.addEventListener('click',  () => calendar?.prev());
-    document.getElementById('calNext')?.addEventListener('click',  () => calendar?.next());
-    document.getElementById('calToday')?.addEventListener('click', () => calendar?.today());
+  /* ── Helpers ── */
+  function calcHeight() {
+    const topbar  = document.querySelector('.top-bar');
+    const toolbar = document.querySelector('.cal-toolbar');
+    const bnav    = document.querySelector('.bottom-nav');
+    const bnavH   = bnav && window.getComputedStyle(bnav).display !== 'none'
+                    ? bnav.offsetHeight : 0;
+    const used = (topbar  ? topbar.offsetHeight  : 56)
+               + (toolbar ? toolbar.offsetHeight : 60)
+               + bnavH + 8;
+    return Math.max(window.innerHeight - used, 300);
+  }
+
+  function updateTitle(view) {
+    const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio',
+                    'Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const start = view.currentStart;
+    let label;
+    if (view.type === 'dayGridMonth') {
+      label = months[start.getMonth()] + ' ' + start.getFullYear();
+    } else if (view.type === 'timeGridWeek') {
+      const end = new Date(+view.currentEnd - 1);
+      label = `${start.getDate()} – ${end.getDate()} ${months[end.getMonth()]} ${end.getFullYear()}`;
+    } else if (view.type === 'timeGridDay') {
+      const days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+      label = `${days[start.getDay()]} ${start.getDate()} ${months[start.getMonth()]}`;
+    } else {
+      label = months[start.getMonth()] + ' ' + start.getFullYear();
+    }
+    const t1 = document.getElementById('calTitle');
+    const t2 = document.getElementById('topBarTitle');
+    if (t1) t1.textContent = label;
+    if (t2) t2.textContent = label;
+  }
+
+  /* ── Toolbar wiring — always runs, even if FullCalendar fails ── */
+  function wireToolbar(cal) {
+    document.getElementById('addEventBtn')
+      ?.addEventListener('click', () => window.openEventModal?.());
+    document.getElementById('calPrev')
+      ?.addEventListener('click', () => { cal?.prev(); });
+    document.getElementById('calNext')
+      ?.addEventListener('click', () => { cal?.next(); });
+    document.getElementById('calToday')
+      ?.addEventListener('click', () => { cal?.today(); });
     document.querySelectorAll('.view-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        calendar?.changeView(btn.dataset.view);
+        cal?.changeView(btn.dataset.view);
       });
     });
   }
 
+  /* ── Abort with visible message if bundle missing ── */
   if (typeof FullCalendar === 'undefined') {
-    // CDN didn't load — still let the user create events, and surface the problem.
     wireToolbar(null);
-    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--text-3)">' +
-      'No se pudo cargar el calendario. Verificá tu conexión y tocá "Actualizar aplicación" en Ajustes.</div>';
+    el.style.cssText = 'display:flex;align-items:center;justify-content:center;';
+    el.innerHTML = '<p style="color:#a0a0c8;font-size:.9rem;text-align:center;padding:20px">'
+      + '⚠️ No se pudo cargar el calendario.<br>Activá tu conexión y presioná<br>'
+      + '"Actualizar aplicación" en Ajustes.</p>';
     return;
   }
 
-  const calendar = new FullCalendar.Calendar(el, {
-    locale:           'es',
-    initialView:      'dayGridMonth',
-    firstDay:         1,
-    headerToolbar:    false,
-    height:           '100%',
-    nowIndicator:     true,
-    editable:         false,
-    selectable:       true,
-    dayMaxEvents:     false,
-    eventDisplay:     'block',
-    noEventsContent:  'Sin eventos',
+  /* ── Initialize FullCalendar ── */
+  let calendar;
+  try {
+    calendar = new FullCalendar.Calendar(el, {
+      locale:          'es',
+      initialView:     'dayGridMonth',
+      firstDay:        1,
+      headerToolbar:   false,
+      height:          calcHeight(),
+      nowIndicator:    true,
+      editable:        false,
+      selectable:      true,
+      dayMaxEvents:    false,
+      noEventsContent: 'Sin eventos',
 
-    eventContent: function(arg) {
-      if (arg.view.type === 'dayGridMonth') {
-        const color = arg.event.backgroundColor || 'var(--primary)';
-        return { html: `<span class="fc-event-dot" style="background:${color}"></span>` };
-      }
-      // timeGridWeek, timeGridDay, listWeek → default FullCalendar rendering
-    },
+      eventContent(arg) {
+        if (arg.view.type === 'dayGridMonth') {
+          const c = arg.event.backgroundColor || 'var(--primary)';
+          return { html: `<span class="fc-event-dot" style="background:${c}"></span>` };
+        }
+      },
 
-    events: function(info, successCb, failureCb) {
-      const url = APP_URL + `/api/events?start=${info.startStr}&end=${info.endStr}`;
-      fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-        .then(r => r.json())
-        .then(data => successCb(data))
-        .catch(failureCb);
-    },
+      events(info, ok, fail) {
+        fetch(APP_URL + `/api/events?start=${info.startStr}&end=${info.endStr}`,
+              { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+          .then(r => r.json()).then(ok).catch(fail);
+      },
 
-    datesSet(info) {
-      const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-      const start  = info.view.currentStart;
-      let label;
-      if (info.view.type === 'dayGridMonth') {
-        label = months[start.getMonth()] + ' ' + start.getFullYear();
-      } else if (info.view.type === 'timeGridWeek') {
-        const end = new Date(info.view.currentEnd - 1);
-        label = `${start.getDate()} – ${end.getDate()} ${months[end.getMonth()]} ${end.getFullYear()}`;
-      } else if (info.view.type === 'timeGridDay') {
-        const days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-        label = `${days[start.getDay()]} ${start.getDate()} ${months[start.getMonth()]}`;
-      } else {
-        label = months[start.getMonth()] + ' ' + start.getFullYear();
-      }
-      document.getElementById('calTitle').textContent  = label;
-      document.getElementById('topBarTitle').textContent = label;
-    },
+      datesSet(info) { updateTitle(info.view); },
 
-    dateClick(info) {
-      window.openEventModal(info.dateStr);
-    },
+      dateClick(info) { window.openEventModal?.(info.dateStr); },
 
-    eventClick(info) {
-      const ev = info.event;
-      if (ev.extendedProps.is_hybrid) {
-        showToast('Este evento es privado', 'info');
-        return;
-      }
-      window.openEventModal(null, {
-        event_id: ev.extendedProps.event_id,
-        title:    ev.title,
-        start:    ev.startStr,
-        end:      ev.endStr,
-        extendedProps: ev.extendedProps,
-      });
-    },
+      eventClick(info) {
+        const ev = info.event;
+        if (ev.extendedProps.is_hybrid) {
+          window.showToast?.('Este evento es privado', 'info');
+          return;
+        }
+        window.openEventModal?.(null, {
+          event_id: ev.extendedProps.event_id,
+          title:    ev.title,
+          start:    ev.startStr,
+          end:      ev.endStr,
+          extendedProps: ev.extendedProps,
+        });
+      },
 
-    eventDidMount(info) {
-      const p = info.event.extendedProps;
-      // Add a small recurring dot indicator on timeGrid views (not on month dots)
-      if (p.is_recurring && info.view.type !== 'dayGridMonth') {
-        const dot = document.createElement('span');
-        dot.style.cssText = 'display:inline-block;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.7);margin-right:3px;vertical-align:middle;flex-shrink:0;';
-        info.el.querySelector('.fc-event-title')?.prepend(dot);
-      }
-    },
-  });
+      eventDidMount(info) {
+        if (info.event.extendedProps.is_recurring && info.view.type !== 'dayGridMonth') {
+          const dot = document.createElement('span');
+          dot.style.cssText = 'display:inline-block;width:5px;height:5px;border-radius:50%;'
+            + 'background:rgba(255,255,255,.7);margin-right:3px;vertical-align:middle;flex-shrink:0;';
+          info.el.querySelector('.fc-event-title')?.prepend(dot);
+        }
+      },
+    });
 
-  calendar.render();
-  window._calendar = calendar;
+    // Wire toolbar BEFORE render so buttons work even if render errors
+    wireToolbar(calendar);
+    calendar.render();
+    window._calendar = calendar;
 
-  wireToolbar(calendar);
+    window.addEventListener('resize', () => {
+      window._calendar?.setOption('height', calcHeight());
+    });
+
+  } catch(err) {
+    wireToolbar(null);
+    el.style.cssText = 'display:flex;align-items:center;justify-content:center;';
+    el.innerHTML = `<p style="color:#a0a0c8;font-size:.85rem;text-align:center;padding:20px">`
+      + `⚠️ Error al inicializar el calendario:<br><code style="color:#f97;font-size:.8rem">`
+      + err.message + `</code><br><br>Presioná "Actualizar aplicación" en Ajustes.</p>`;
+    console.error('[FamilyCal] FullCalendar init error:', err);
+  }
 })();
 
 /* ── Helpers ─────────────────────────────────────── */
