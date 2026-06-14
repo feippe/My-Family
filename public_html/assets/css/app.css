@@ -639,6 +639,8 @@ img, svg { display: block; }
   scroll-snap-type: y mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  position: relative;
+  z-index: 2; /* above .ios-picker-highlight so text is never covered */
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
   mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
 }
