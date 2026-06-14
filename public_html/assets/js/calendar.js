@@ -420,13 +420,43 @@
   function calcHeight() {
     const topbar  = document.querySelector('.top-bar');
     const toolbar = document.querySelector('.cal-toolbar');
+    const strip   = document.getElementById('dayWeekStrip');
     const bnav    = document.querySelector('.bottom-nav');
     const bnavH   = bnav && window.getComputedStyle(bnav).display !== 'none'
                     ? bnav.offsetHeight : 0;
+    const stripH  = strip ? strip.offsetHeight : 0;
     const used = (topbar  ? topbar.offsetHeight  : 56)
                + (toolbar ? toolbar.offsetHeight : 60)
-               + bnavH + 8;
+               + stripH + bnavH + 8;
     return Math.max(window.innerHeight - used, 300);
+  }
+
+  function updateDayStrip(currentDate) {
+    const strip = document.getElementById('dayWeekStrip');
+    if (!strip) return;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const cur   = new Date(currentDate); cur.setHours(0,0,0,0);
+    // Week starts Monday
+    const dow   = cur.getDay();
+    const mon   = new Date(cur);
+    mon.setDate(cur.getDate() + (dow === 0 ? -6 : 1 - dow));
+    const letters = ['L','M','X','J','V','S','D'];
+    strip.innerHTML = '';
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(mon);
+      day.setDate(mon.getDate() + i);
+      const isToday    = day.getTime() === today.getTime();
+      const isSelected = day.getTime() === cur.getTime();
+      const btn = document.createElement('button');
+      btn.type      = 'button';
+      btn.className = 'day-strip-item'
+        + (isToday    ? ' is-today'    : '')
+        + (isSelected ? ' is-selected' : '');
+      btn.innerHTML = `<span class="day-strip-letter">${letters[i]}</span>`
+                    + `<span class="day-strip-num">${day.getDate()}</span>`;
+      btn.addEventListener('click', () => calendar.gotoDate(fmtDate(day)));
+      strip.appendChild(btn);
+    }
   }
 
   function updateTitle(view) {
@@ -494,6 +524,8 @@
       selectable:      true,
       dayMaxEvents:    false,
       noEventsContent: 'Sin eventos',
+      scrollTimeReset: false,
+      slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
 
       eventContent(arg) {
         if (arg.view.type === 'dayGridMonth') {
@@ -508,7 +540,30 @@
           .then(r => r.json()).then(ok).catch(fail);
       },
 
-      datesSet(info) { updateTitle(info.view); },
+      datesSet(info) {
+        updateTitle(info.view);
+        const strip = document.getElementById('dayWeekStrip');
+        const isDay = info.view.type === 'timeGridDay';
+        if (strip) {
+          strip.style.display = isDay ? 'flex' : 'none';
+          if (isDay) {
+            updateDayStrip(info.view.currentStart);
+            // Scroll to ~1h before now when viewing today
+            const now = new Date();
+            const viewStart = new Date(info.view.currentStart);
+            viewStart.setHours(0,0,0,0);
+            now.setSeconds(0,0);
+            const isToday = viewStart.getTime() === (() => { const d=new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
+            if (isToday) {
+              requestAnimationFrame(() =>
+                calendar.scrollToTime({ hours: Math.max(0, now.getHours() - 1), minutes: now.getMinutes() })
+              );
+            }
+            // Recalculate height after strip appears
+            requestAnimationFrame(() => calendar.setOption('height', calcHeight()));
+          }
+        }
+      },
 
       dateClick(info) {
         // Tap in month view → drill into that day

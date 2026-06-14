@@ -24,6 +24,9 @@
     </button>
   </div>
 
+  <!-- Day-view week strip (hidden in other views) -->
+  <div class="day-week-strip" id="dayWeekStrip"></div>
+
   <!-- FullCalendar mount -->
   <div id="calendar"></div>
 </div>
