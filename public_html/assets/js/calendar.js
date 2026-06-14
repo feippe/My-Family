@@ -2,73 +2,67 @@
 'use strict';
 
 /* ══════════════════════════════════════════════════
-   Time Picker (5-minute intervals)
+   iOS-style Time Picker (scroll-wheel, bottom sheet)
 ══════════════════════════════════════════════════ */
 (function initTimePicker() {
   const picker    = document.getElementById('timePicker');
-  const inner     = document.getElementById('timePickerInner');
-  if (!picker) return;
+  const hourCol   = document.getElementById('hourCol');
+  const minCol    = document.getElementById('minuteCol');
+  const doneBtn   = document.getElementById('timePickerDone');
+  const cancelBtn = document.getElementById('timePickerCancel');
+  if (!picker || !hourCol || !minCol) return;
 
+  const ITEM_H = 44;
+  const HOURS  = Array.from({length: 24}, (_, i) => i);
+  const MINS   = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
   let activeInput = null;
 
-  function buildOptions() {
-    inner.innerHTML = '';
-    for (let h = 0; h < 24; h++) {
-      for (let m = 0; m < 60; m += 5) {
-        const label = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-        const opt   = document.createElement('div');
-        opt.className = 'time-option';
-        opt.textContent = label;
-        opt.dataset.value = label;
-        opt.addEventListener('click', () => selectTime(label));
-        inner.appendChild(opt);
-      }
-    }
+  function buildCol(col, values) {
+    col.innerHTML = '';
+    // Ghost pads top/bottom so first/last items can snap to center
+    const top = document.createElement('div');
+    top.className = 'ios-picker-ghost';
+    col.appendChild(top);
+    values.forEach(v => {
+      const item = document.createElement('div');
+      item.className = 'ios-picker-item';
+      item.textContent = String(v).padStart(2, '0');
+      col.appendChild(item);
+    });
+    const bot = document.createElement('div');
+    bot.className = 'ios-picker-ghost';
+    col.appendChild(bot);
   }
 
-  function selectTime(val) {
-    if (activeInput) {
-      activeInput.value = val;
-      activeInput.dispatchEvent(new Event('change'));
-      syncEndTime();
-    }
-    hidePicker();
+  buildCol(hourCol, HOURS);
+  buildCol(minCol,  MINS);
+
+  function snapTo(col, index) {
+    col.scrollTo({ top: index * ITEM_H, behavior: 'instant' });
+  }
+
+  function getIndex(col, len) {
+    return Math.max(0, Math.min(Math.round(col.scrollTop / ITEM_H), len - 1));
   }
 
   function showPicker(input) {
     activeInput = input;
-    const rect = input.getBoundingClientRect();
-    picker.style.display = 'block';
-    picker.style.left    = rect.left + 'px';
-    picker.style.top     = (rect.bottom + 4) + 'px';
-
-    // Highlight current
-    inner.querySelectorAll('.time-option').forEach(o => {
-      o.classList.toggle('selected', o.dataset.value === input.value);
-    });
-    // Scroll to current
-    const sel = inner.querySelector('.selected');
-    if (sel) sel.scrollIntoView({ block: 'center' });
-    else inner.scrollTop = 0;
+    const [hStr, mStr] = (input.value || '09:00').split(':');
+    const h    = Math.max(0, Math.min(parseInt(hStr) || 0, 23));
+    const mRaw = Math.round((parseInt(mStr) || 0) / 5) * 5;
+    const mIdx = Math.max(0, MINS.indexOf(mRaw));
+    picker.classList.add('open');
+    // Double rAF: picker must be painted before scrollTop takes effect
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      snapTo(hourCol, h);
+      snapTo(minCol,  mIdx);
+    }));
   }
 
   function hidePicker() {
-    picker.style.display = 'none';
+    picker.classList.remove('open');
     activeInput = null;
   }
-
-  buildOptions();
-
-  document.querySelectorAll('.time-input').forEach(input => {
-    input.addEventListener('click', (e) => { e.stopPropagation(); showPicker(input); });
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Escape') hidePicker();
-    });
-  });
-
-  document.addEventListener('click', e => {
-    if (!picker.contains(e.target)) hidePicker();
-  });
 
   function syncEndTime() {
     const startDate = document.getElementById('evStartDate')?.value;
@@ -76,23 +70,34 @@
     const endDate   = document.getElementById('evEndDate');
     const endTime   = document.getElementById('evEndTime');
     if (!startDate || !startTime || !endDate || !endTime) return;
-
-    // If end date is empty, sync it
     if (!endDate.value) endDate.value = startDate;
-
-    // Auto-advance end time by 1h if same date and end <= start
     const [sh, sm] = startTime.split(':').map(Number);
     const [eh, em] = (endTime.value || '00:00').split(':').map(Number);
-    const startMins = sh * 60 + sm;
-    const endMins   = eh * 60 + em;
-
-    if (endDate.value === startDate && endMins <= startMins) {
-      const newMins = startMins + 60;
-      const nh = Math.floor(newMins / 60) % 24;
-      const nm = newMins % 60;
-      endTime.value = `${String(nh).padStart(2,'0')}:${String(nm - nm%5).padStart(2,'0')}`;
+    if (endDate.value === startDate && (eh * 60 + em) <= (sh * 60 + sm)) {
+      const nm = sh * 60 + sm + 60;
+      const rnd = nm - nm % 5;
+      endTime.value = `${String(Math.floor(rnd / 60) % 24).padStart(2,'0')}:${String(rnd % 60).padStart(2,'0')}`;
     }
   }
+
+  doneBtn.addEventListener('click', () => {
+    if (activeInput) {
+      const h = HOURS[getIndex(hourCol, HOURS.length)];
+      const m = MINS [getIndex(minCol,  MINS.length)];
+      activeInput.value = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+      activeInput.dispatchEvent(new Event('change'));
+      syncEndTime();
+    }
+    hidePicker();
+  });
+
+  cancelBtn.addEventListener('click', hidePicker);
+  picker.addEventListener('click', e => { if (e.target === picker) hidePicker(); });
+
+  document.querySelectorAll('.time-input').forEach(input => {
+    input.readOnly = true;
+    input.addEventListener('click', e => { e.stopPropagation(); showPicker(input); });
+  });
 
   window._syncEndTime = syncEndTime;
 })();
@@ -505,7 +510,16 @@
 
       datesSet(info) { updateTitle(info.view); },
 
-      dateClick(info) { window.openEventModal?.(info.dateStr); },
+      dateClick(info) {
+        // Tap in month view → drill into that day
+        if (info.view.type === 'dayGridMonth') {
+          calendar.changeView('timeGridDay', info.date);
+          document.querySelectorAll('.view-btn').forEach(b =>
+            b.classList.toggle('active', b.dataset.view === 'timeGridDay')
+          );
+        }
+        // In other views a simple tap does nothing; long-press creates events
+      },
 
       eventClick(info) {
         const ev = info.event;
@@ -536,6 +550,32 @@
     wireToolbar(calendar);
     calendar.render();
     window._calendar = calendar;
+
+    // Long-press on a date cell (600ms) → open new-event modal
+    {
+      let _lpTimer = null, _lpDate = null, _lpX = 0, _lpY = 0;
+      el.addEventListener('pointerdown', e => {
+        if (e.target.closest('.fc-event')) return; // events handled by eventClick
+        const cell = e.target.closest('[data-date]');
+        if (!cell) return;
+        _lpDate = cell.dataset.date;
+        _lpX = e.clientX; _lpY = e.clientY;
+        _lpTimer = setTimeout(() => {
+          _lpTimer = null;
+          navigator.vibrate?.(40);
+          window.openEventModal?.(_lpDate);
+        }, 600);
+      }, { passive: true });
+      el.addEventListener('pointermove', e => {
+        if (!_lpTimer) return;
+        if (Math.abs(e.clientX - _lpX) > 10 || Math.abs(e.clientY - _lpY) > 10) {
+          clearTimeout(_lpTimer); _lpTimer = null;
+        }
+      });
+      const cancelLp = () => { clearTimeout(_lpTimer); _lpTimer = null; };
+      el.addEventListener('pointerup',     cancelLp);
+      el.addEventListener('pointercancel', cancelLp);
+    }
 
     window.addEventListener('resize', () => {
       window._calendar?.setOption('height', calcHeight());

@@ -335,9 +335,20 @@
   </div>
 </div>
 
-<!-- Time picker dropdown -->
-<div class="time-picker-dropdown" id="timePicker" style="display:none">
-  <div class="time-picker-inner" id="timePickerInner"></div>
+<!-- iOS-style time picker bottom sheet -->
+<div class="ios-time-picker" id="timePicker">
+  <div class="ios-picker-sheet">
+    <div class="ios-picker-header">
+      <button type="button" class="ios-picker-cancel" id="timePickerCancel">Cancelar</button>
+      <button type="button" class="ios-picker-done"   id="timePickerDone">Listo</button>
+    </div>
+    <div class="ios-picker-body">
+      <div class="ios-picker-col" id="hourCol"></div>
+      <div class="ios-picker-sep">:</div>
+      <div class="ios-picker-col" id="minuteCol"></div>
+      <div class="ios-picker-highlight"></div>
+    </div>
+  </div>
 </div>
 
 <script>
