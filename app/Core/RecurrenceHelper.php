@@ -2,14 +2,14 @@
 namespace App\Core;
 
 class RecurrenceHelper {
-    public static function expand(array $event, string $rangeStart, string $rangeEnd): array {
+    public static function expand(array $event, string $rangeStart, string $rangeEnd, array $exceptions = []): array {
         if (!$event['is_recurring'] || empty($event['recurrence_rule'])) return [$event];
 
         $rule     = is_string($event['recurrence_rule']) ? json_decode($event['recurrence_rule'], true) : $event['recurrence_rule'];
         $type     = $rule['type'] ?? $event['recurrence_type'] ?? 'weekly';
-        $origStart = new \DateTime($event['start_datetime']);
-        $origEnd   = new \DateTime($event['end_datetime']);
-        $duration  = $origStart->diff($origEnd);
+        $origStart= new \DateTime($event['start_datetime']);
+        $origEnd  = new \DateTime($event['end_datetime']);
+        $duration = $origStart->diff($origEnd);
 
         $rStart = new \DateTime($rangeStart);
         $rEnd   = new \DateTime($rangeEnd);
@@ -30,23 +30,42 @@ class RecurrenceHelper {
                 break;
         }
 
-        return $instances;
+        // Apply exceptions
+        $result = [];
+        foreach ($instances as $inst) {
+            $date = substr($inst['start_datetime'], 0, 10);
+            if (isset($exceptions[$date])) {
+                $ex = $exceptions[$date];
+                if ($ex['is_deleted']) continue; // this occurrence deleted
+                // Apply overrides
+                foreach (['new_title','new_description','new_start','new_end','new_location','new_category_id','new_visibility','new_color'] as $field) {
+                    if ($ex[$field] !== null) {
+                        $target = str_replace('new_', '', $field);
+                        if ($field === 'new_start') $inst['start_datetime'] = $ex[$field];
+                        elseif ($field === 'new_end')  $inst['end_datetime']   = $ex[$field];
+                        else $inst[$target] = $ex[$field];
+                    }
+                }
+                $inst['has_exception'] = true;
+            }
+            $result[] = $inst;
+        }
+
+        return $result;
     }
 
     private static function weekly(array $ev, array $rule, \DateTime $orig, \DateTime $rS, \DateTime $rE, \DateTime $recEnd, \DateInterval $dur): array {
-        $days = $rule['days'] ?? [strtolower($orig->format('l'))];
-        $dayMap = ['sunday'=>0,'monday'=>1,'tuesday'=>2,'wednesday'=>3,'thursday'=>4,'friday'=>5,'saturday'=>6];
-        $targetDays = array_map(fn($d) => $dayMap[$d] ?? 0, $days);
+        $days    = $rule['days'] ?? [strtolower($orig->format('l'))];
+        $dayMap  = ['sunday'=>0,'monday'=>1,'tuesday'=>2,'wednesday'=>3,'thursday'=>4,'friday'=>5,'saturday'=>6];
+        $targets = array_map(fn($d) => $dayMap[$d] ?? 0, $days);
 
         $instances = [];
         $cur = clone $rS;
         $cur->setTime((int)$orig->format('H'), (int)$orig->format('i'), 0);
 
         while ($cur <= $rE && $cur <= $recEnd) {
-            if (in_array((int)$cur->format('w'), $targetDays)) {
-                if ($cur >= $orig) {
-                    $instances[] = self::makeInstance($ev, clone $cur, $dur);
-                }
+            if (in_array((int)$cur->format('w'), $targets) && $cur >= $orig) {
+                $instances[] = self::makeInstance($ev, clone $cur, $dur);
             }
             $cur->modify('+1 day');
         }
@@ -64,10 +83,8 @@ class RecurrenceHelper {
 
             if ($mode === 'day_of_month') {
                 $day = $rule['day'] ?? (int)$orig->format('j');
-                $maxDay = (int)(new \DateTime("$year-$month-01"))->format('t');
-                $day = min($day, $maxDay);
-                $candidate = new \DateTime(sprintf('%04d-%02d-%02d', $year, $month, $day));
-                $candidate->setTime((int)$orig->format('H'), (int)$orig->format('i'), 0);
+                $day = min($day, (int)(new \DateTime("$year-$month-01"))->format('t'));
+                $candidate = new \DateTime(sprintf('%04d-%02d-%02d %s', $year, $month, $day, $orig->format('H:i:s')));
             } else {
                 $candidate = self::nthWeekday($year, $month, $rule['weekday'] ?? 'friday', (int)($rule['occurrence'] ?? 1));
                 if ($candidate) $candidate->setTime((int)$orig->format('H'), (int)$orig->format('i'), 0);
@@ -76,7 +93,6 @@ class RecurrenceHelper {
             if ($candidate && $candidate >= $rS && $candidate <= $rE && $candidate <= $recEnd && $candidate >= $orig) {
                 $instances[] = self::makeInstance($ev, $candidate, $dur);
             }
-
             $cur->modify('+1 month');
         }
         return $instances;
@@ -90,15 +106,13 @@ class RecurrenceHelper {
         for ($year = (int)$rS->format('Y'); $year <= (int)$rE->format('Y'); $year++) {
             if ($mode === 'fixed_date') {
                 $day = $rule['day'] ?? (int)$orig->format('j');
-                $candidate = new \DateTime(sprintf('%04d-%02d-%02d', $year, $month, $day));
+                $candidate = new \DateTime(sprintf('%04d-%02d-%02d %s', $year, $month, $day, $orig->format('H:i:s')));
             } else {
                 $candidate = self::nthWeekday($year, $month, $rule['weekday'] ?? 'monday', (int)($rule['occurrence'] ?? 1));
+                if ($candidate) $candidate->setTime((int)$orig->format('H'), (int)$orig->format('i'), 0);
             }
-            if ($candidate) {
-                $candidate->setTime((int)$orig->format('H'), (int)$orig->format('i'), 0);
-                if ($candidate >= $rS && $candidate <= $rE && $candidate <= $recEnd && $candidate >= $orig) {
-                    $instances[] = self::makeInstance($ev, $candidate, $dur);
-                }
+            if ($candidate && $candidate >= $rS && $candidate <= $rE && $candidate <= $recEnd && $candidate >= $orig) {
+                $instances[] = self::makeInstance($ev, $candidate, $dur);
             }
         }
         return $instances;
@@ -106,7 +120,7 @@ class RecurrenceHelper {
 
     private static function nthWeekday(int $year, int $month, string $weekday, int $n): ?\DateTime {
         $dayNames = ['sunday'=>0,'monday'=>1,'tuesday'=>2,'wednesday'=>3,'thursday'=>4,'friday'=>5,'saturday'=>6];
-        $target = $dayNames[$weekday] ?? 1;
+        $target   = $dayNames[$weekday] ?? 1;
 
         if ($n === -1) {
             $last = new \DateTime("last day of $year-$month");
@@ -115,21 +129,18 @@ class RecurrenceHelper {
         }
 
         $d = new \DateTime("$year-$month-01");
-        $count = 0;
         $end = new \DateTime("$year-$month-01");
         $end->modify('+1 month');
+        $count = 0;
         while ($d < $end) {
-            if ((int)$d->format('w') === $target) {
-                $count++;
-                if ($count === $n) return clone $d;
-            }
+            if ((int)$d->format('w') === $target && ++$count === $n) return clone $d;
             $d->modify('+1 day');
         }
         return null;
     }
 
     private static function makeInstance(array $ev, \DateTime $start, \DateInterval $dur): array {
-        $end = clone $start;
+        $end  = clone $start;
         $end->add($dur);
         $inst = $ev;
         $inst['start_datetime'] = $start->format('Y-m-d H:i:s');

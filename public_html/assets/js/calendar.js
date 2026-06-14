@@ -112,6 +112,7 @@
   if (!overlay) return;
 
   let editingId = null;
+  let currentInstanceDate = null;
 
   // Visibility
   document.querySelectorAll('.vis-btn').forEach(btn => {
@@ -242,6 +243,7 @@
     if (eventData) {
       // Edit mode
       editingId = eventData.event_id;
+      currentInstanceDate = eventData.extendedProps?.instance_date || null;
       title.textContent  = 'Editar evento';
       saveTxt.textContent = 'Guardar cambios';
       delBtn.style.display = '';
@@ -304,11 +306,32 @@
   overlay.addEventListener('click', e => { if (!document.getElementById('eventModal').contains(e.target)) overlay.classList.remove('open'); });
 
   delBtn?.addEventListener('click', async () => {
-    if (!editingId || !confirm('¿Eliminar este evento?')) return;
+    if (!editingId) return;
+    const isRecurring = document.getElementById('evRecurring').checked;
+
+    if (isRecurring) {
+      // Show scope dialog for deletion
+      window._recurScopeCallback = async (scope) => {
+        try {
+          const body = { scope };
+          if (scope !== 'all') body.instance_date = currentInstanceDate;
+          await fc_api('DELETE', APP_URL + '/api/events/' + editingId, body);
+          overlay.classList.remove('open');
+          window._calendar?.refetchEvents();
+          showToast('Evento eliminado', 'success');
+        } catch(e) { showToast(e.message, 'error'); }
+      };
+      document.getElementById('recurScopeTitle').textContent = 'Eliminar evento recurrente';
+      document.getElementById('recurScopeConfirm').textContent = 'Eliminar';
+      document.getElementById('recurScopeConfirm').className = 'btn btn-danger';
+      document.getElementById('recurScopeOverlay').classList.add('open');
+      return;
+    }
+
+    if (!confirm('¿Eliminar este evento?')) return;
     try {
-      await fc_api('DELETE', APP_URL + '/api/events/' + editingId);
+      await fc_api('DELETE', APP_URL + '/api/events/' + editingId, { scope: 'all' });
       overlay.classList.remove('open');
-      window._calendar?.getEventById(editingId)?.remove();
       window._calendar?.refetchEvents();
       showToast('Evento eliminado', 'success');
     } catch(e) { showToast(e.message, 'error'); }
@@ -320,13 +343,33 @@
     if (!data.title) { showToast('El título es requerido', 'error'); return; }
     if (!document.getElementById('evStartDate').value) { showToast('Seleccioná una fecha', 'error'); return; }
 
+    if (editingId && document.getElementById('evRecurring').checked) {
+      // Show scope dialog for edits
+      window._recurScopeCallback = async (scope) => {
+        data.scope = scope;
+        if (scope !== 'all') data.instance_date = currentInstanceDate;
+        saveBtn.disabled = true;
+        try {
+          const res = await fc_api('PUT', APP_URL + '/api/events/' + editingId, data);
+          overlay.classList.remove('open');
+          window._calendar?.refetchEvents();
+          showToast('Evento actualizado', 'success');
+        } catch(e) { showToast(e.message, 'error'); }
+        finally    { saveBtn.disabled = false; }
+      };
+      document.getElementById('recurScopeTitle').textContent    = 'Editar evento recurrente';
+      document.getElementById('recurScopeConfirm').textContent  = 'Continuar';
+      document.getElementById('recurScopeConfirm').className    = 'btn btn-primary';
+      document.getElementById('recurScopeOverlay').classList.add('open');
+      return;
+    }
+
     saveBtn.disabled = true;
     try {
-      let res;
       if (editingId) {
-        res = await fc_api('PUT', APP_URL + '/api/events/' + editingId, data);
+        await fc_api('PUT', APP_URL + '/api/events/' + editingId, { ...data, scope: 'all' });
       } else {
-        res = await fc_api('POST', APP_URL + '/api/events', data);
+        await fc_api('POST', APP_URL + '/api/events', data);
       }
       overlay.classList.remove('open');
       window._calendar?.refetchEvents();
@@ -339,97 +382,173 @@
   });
 })();
 
+/* ── Recurring scope dialog ──────────────────────── */
+(function initRecurDialog() {
+  const overlay  = document.getElementById('recurScopeOverlay');
+  const confirm  = document.getElementById('recurScopeConfirm');
+  const cancel   = document.getElementById('recurScopeCancel');
+  if (!overlay) return;
+
+  confirm.addEventListener('click', () => {
+    const scope = document.querySelector('[name="rec_scope"]:checked')?.value || 'this';
+    overlay.classList.remove('open');
+    window._recurScopeCallback?.(scope);
+    window._recurScopeCallback = null;
+  });
+  cancel.addEventListener('click', () => { overlay.classList.remove('open'); window._recurScopeCallback = null; });
+  overlay.addEventListener('click', e => {
+    if (!overlay.querySelector('.modal').contains(e.target)) {
+      overlay.classList.remove('open');
+      window._recurScopeCallback = null;
+    }
+  });
+})();
+
 /* ══════════════════════════════════════════════════
    FullCalendar
 ══════════════════════════════════════════════════ */
 (function initCalendar() {
   const el = document.getElementById('calendar');
-  if (!el || typeof FullCalendar === 'undefined') return;
+  if (!el) return;
 
-  const calendar = new FullCalendar.Calendar(el, {
-    locale:         'es',
-    initialView:    window.innerWidth < 640 ? 'listWeek' : 'dayGridMonth',
-    firstDay:       1, // Monday
-    headerToolbar:  false,
-    height:         '100%',
-    nowIndicator:   true,
-    editable:       false,
-    selectable:     true,
-    dayMaxEvents:   4,
-    eventDisplay:   'block',
+  /* ── Helpers ── */
+  function calcHeight() {
+    const topbar  = document.querySelector('.top-bar');
+    const toolbar = document.querySelector('.cal-toolbar');
+    const bnav    = document.querySelector('.bottom-nav');
+    const bnavH   = bnav && window.getComputedStyle(bnav).display !== 'none'
+                    ? bnav.offsetHeight : 0;
+    const used = (topbar  ? topbar.offsetHeight  : 56)
+               + (toolbar ? toolbar.offsetHeight : 60)
+               + bnavH + 8;
+    return Math.max(window.innerHeight - used, 300);
+  }
 
-    events: function(info, successCb, failureCb) {
-      const url = APP_URL + `/api/events?start=${info.startStr}&end=${info.endStr}`;
-      fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-        .then(r => r.json())
-        .then(data => successCb(data))
-        .catch(failureCb);
-    },
+  function updateTitle(view) {
+    const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio',
+                    'Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const start = view.currentStart;
+    let label;
+    if (view.type === 'dayGridMonth') {
+      label = months[start.getMonth()] + ' ' + start.getFullYear();
+    } else if (view.type === 'timeGridWeek') {
+      const end = new Date(+view.currentEnd - 1);
+      label = `${start.getDate()} – ${end.getDate()} ${months[end.getMonth()]} ${end.getFullYear()}`;
+    } else if (view.type === 'timeGridDay') {
+      const days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+      label = `${days[start.getDay()]} ${start.getDate()} ${months[start.getMonth()]}`;
+    } else {
+      label = months[start.getMonth()] + ' ' + start.getFullYear();
+    }
+    const t1 = document.getElementById('calTitle');
+    const t2 = document.getElementById('topBarTitle');
+    if (t1) t1.textContent = label;
+    if (t2) t2.textContent = label;
+  }
 
-    datesSet(info) {
-      const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-      const start  = info.view.currentStart;
-      let label;
-      if (info.view.type === 'dayGridMonth') {
-        label = months[start.getMonth()] + ' ' + start.getFullYear();
-      } else if (info.view.type === 'timeGridWeek') {
-        const end = new Date(info.view.currentEnd - 1);
-        label = `${start.getDate()} – ${end.getDate()} ${months[end.getMonth()]} ${end.getFullYear()}`;
-      } else if (info.view.type === 'timeGridDay') {
-        const days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-        label = `${days[start.getDay()]} ${start.getDate()} ${months[start.getMonth()]}`;
-      } else {
-        label = months[start.getMonth()] + ' ' + start.getFullYear();
-      }
-      document.getElementById('calTitle').textContent  = label;
-      document.getElementById('topBarTitle').textContent = label;
-    },
-
-    dateClick(info) {
-      window.openEventModal(info.dateStr);
-    },
-
-    eventClick(info) {
-      const ev = info.event;
-      if (ev.extendedProps.is_hybrid) {
-        showToast('Este evento es privado', 'info');
-        return;
-      }
-      window.openEventModal(null, {
-        event_id: ev.extendedProps.event_id,
-        title:    ev.title,
-        start:    ev.startStr,
-        end:      ev.endStr,
-        extendedProps: ev.extendedProps,
+  /* ── Toolbar wiring — always runs, even if FullCalendar fails ── */
+  function wireToolbar(cal) {
+    document.getElementById('addEventBtn')
+      ?.addEventListener('click', () => window.openEventModal?.());
+    document.getElementById('calPrev')
+      ?.addEventListener('click', () => { cal?.prev(); });
+    document.getElementById('calNext')
+      ?.addEventListener('click', () => { cal?.next(); });
+    document.getElementById('calToday')
+      ?.addEventListener('click', () => { cal?.today(); });
+    document.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        cal?.changeView(btn.dataset.view);
       });
-    },
-
-    eventDidMount(info) {
-      const p = info.event.extendedProps;
-      if (p.is_recurring) {
-        const dot = document.createElement('span');
-        dot.style.cssText = 'display:inline-block;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.7);margin-right:3px;vertical-align:middle;';
-        info.el.querySelector('.fc-event-title')?.prepend(dot);
-      }
-    },
-  });
-
-  calendar.render();
-  window._calendar = calendar;
-
-  // Toolbar controls
-  document.getElementById('calPrev')?.addEventListener('click', () => calendar.prev());
-  document.getElementById('calNext')?.addEventListener('click', () => calendar.next());
-  document.getElementById('calToday')?.addEventListener('click', () => calendar.today());
-  document.getElementById('addEventBtn')?.addEventListener('click', () => window.openEventModal());
-
-  document.querySelectorAll('.view-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      calendar.changeView(btn.dataset.view);
     });
-  });
+  }
+
+  /* ── Abort with visible message if bundle missing ── */
+  if (typeof FullCalendar === 'undefined') {
+    wireToolbar(null);
+    el.style.cssText = 'display:flex;align-items:center;justify-content:center;';
+    el.innerHTML = '<p style="color:#a0a0c8;font-size:.9rem;text-align:center;padding:20px">'
+      + '⚠️ No se pudo cargar el calendario.<br>Activá tu conexión y presioná<br>'
+      + '"Actualizar aplicación" en Ajustes.</p>';
+    return;
+  }
+
+  /* ── Initialize FullCalendar ── */
+  let calendar;
+  try {
+    calendar = new FullCalendar.Calendar(el, {
+      locale:          'es',
+      initialView:     'dayGridMonth',
+      firstDay:        1,
+      headerToolbar:   false,
+      height:          calcHeight(),
+      nowIndicator:    true,
+      editable:        false,
+      selectable:      true,
+      dayMaxEvents:    false,
+      noEventsContent: 'Sin eventos',
+
+      eventContent(arg) {
+        if (arg.view.type === 'dayGridMonth') {
+          const c = arg.event.backgroundColor || 'var(--primary)';
+          return { html: `<span class="fc-event-dot" style="background:${c}"></span>` };
+        }
+      },
+
+      events(info, ok, fail) {
+        fetch(APP_URL + `/api/events?start=${info.startStr}&end=${info.endStr}`,
+              { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+          .then(r => r.json()).then(ok).catch(fail);
+      },
+
+      datesSet(info) { updateTitle(info.view); },
+
+      dateClick(info) { window.openEventModal?.(info.dateStr); },
+
+      eventClick(info) {
+        const ev = info.event;
+        if (ev.extendedProps.is_hybrid) {
+          window.showToast?.('Este evento es privado', 'info');
+          return;
+        }
+        window.openEventModal?.(null, {
+          event_id: ev.extendedProps.event_id,
+          title:    ev.title,
+          start:    ev.startStr,
+          end:      ev.endStr,
+          extendedProps: ev.extendedProps,
+        });
+      },
+
+      eventDidMount(info) {
+        if (info.event.extendedProps.is_recurring && info.view.type !== 'dayGridMonth') {
+          const dot = document.createElement('span');
+          dot.style.cssText = 'display:inline-block;width:5px;height:5px;border-radius:50%;'
+            + 'background:rgba(255,255,255,.7);margin-right:3px;vertical-align:middle;flex-shrink:0;';
+          info.el.querySelector('.fc-event-title')?.prepend(dot);
+        }
+      },
+    });
+
+    // Wire toolbar BEFORE render so buttons work even if render errors
+    wireToolbar(calendar);
+    calendar.render();
+    window._calendar = calendar;
+
+    window.addEventListener('resize', () => {
+      window._calendar?.setOption('height', calcHeight());
+    });
+
+  } catch(err) {
+    wireToolbar(null);
+    el.style.cssText = 'display:flex;align-items:center;justify-content:center;';
+    el.innerHTML = `<p style="color:#a0a0c8;font-size:.85rem;text-align:center;padding:20px">`
+      + `⚠️ Error al inicializar el calendario:<br><code style="color:#f97;font-size:.8rem">`
+      + err.message + `</code><br><br>Presioná "Actualizar aplicación" en Ajustes.</p>`;
+    console.error('[FamilyCal] FullCalendar init error:', err);
+  }
 })();
 
 /* ── Helpers ─────────────────────────────────────── */

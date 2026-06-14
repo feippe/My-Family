@@ -17,20 +17,20 @@ class Event extends Model {
                   AND (e.visibility != \'private\' OR e.creator_id = ?)
                   AND (
                     (e.start_datetime BETWEEN ? AND ?)
-                    OR (e.end_datetime BETWEEN ? AND ?)
+                    OR (e.end_datetime  BETWEEN ? AND ?)
                     OR e.is_recurring = 1
                   )
                 ORDER BY e.start_datetime';
 
-        $rows = $this->q($sql, [$groupId, $userId, $start, $end, $start, $end]);
+        $rows   = $this->q($sql, [$groupId, $userId, $start, $end, $start, $end]);
+        $exModel = new EventException();
+        $result  = [];
 
-        $result = [];
         foreach ($rows as $row) {
             if ($row['is_recurring']) {
-                $instances = RecurrenceHelper::expand($row, $start, $end);
-                foreach ($instances as $inst) {
-                    $result[] = $inst;
-                }
+                $exceptions = $exModel->forEvent($row['id']);
+                $instances  = RecurrenceHelper::expand($row, $start, $end, $exceptions);
+                foreach ($instances as $inst) $result[] = $inst;
             } else {
                 $result[] = $row;
             }
@@ -43,7 +43,7 @@ class Event extends Model {
         $ev = $this->findById($id);
         if (!$ev) return null;
         $ev['participants'] = $this->q(
-            'SELECT u.id, u.name, u.avatar, u.color FROM users u
+            'SELECT u.id, u.name, u.avatar, u.color, u.email FROM users u
              JOIN event_participants ep ON ep.user_id = u.id
              WHERE ep.event_id = ?',
             [$id]
@@ -64,8 +64,16 @@ class Event extends Model {
         }
     }
 
+    public function getParticipantUsers(int $eventId): array {
+        return $this->q(
+            'SELECT u.id, u.name, u.email, u.avatar, u.color FROM users u
+             JOIN event_participants ep ON ep.user_id = u.id
+             WHERE ep.event_id = ?',
+            [$eventId]
+        );
+    }
+
     public function belongsToGroup(int $eventId, int $groupId): bool {
-        $r = $this->qOne('SELECT id FROM events WHERE id = ? AND group_id = ?', [$eventId, $groupId]);
-        return $r !== null;
+        return $this->qOne('SELECT id FROM events WHERE id = ? AND group_id = ?', [$eventId, $groupId]) !== null;
     }
 }

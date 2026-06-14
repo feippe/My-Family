@@ -1,0 +1,26 @@
+# Dependencies
+/vendor/
+/node_modules/
+
+# Environment & config with secrets
+# These are deployed once manually — not overwritten by CI
+app/Config/database.php
+app/Config/push.php
+app/Config/mail.php
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+/storage/logs/
+
+# Uploads (user content)
+/public_html/uploads/

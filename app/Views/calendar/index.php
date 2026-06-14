@@ -307,6 +307,34 @@
   </div>
 </div>
 
+<!-- ===== RECURRING SCOPE DIALOG ===== -->
+<div class="modal-overlay" id="recurScopeOverlay">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h3 class="modal-title" id="recurScopeTitle">Editar evento recurrente</h3>
+    </div>
+    <div class="modal-body" style="gap:10px">
+      <p class="text-secondary" style="font-size:.88rem;margin-bottom:4px">¿Cuáles eventos querés modificar?</p>
+      <label class="radio-option-row">
+        <input type="radio" name="rec_scope" value="this" checked>
+        <div><strong>Solo este evento</strong><span class="radio-desc">Solo se modifica esta ocurrencia.</span></div>
+      </label>
+      <label class="radio-option-row">
+        <input type="radio" name="rec_scope" value="following">
+        <div><strong>Este y los siguientes</strong><span class="radio-desc">Se modifica desde esta fecha en adelante.</span></div>
+      </label>
+      <label class="radio-option-row">
+        <input type="radio" name="rec_scope" value="all">
+        <div><strong>Todos los eventos</strong><span class="radio-desc">Se modifican todas las ocurrencias.</span></div>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="recurScopeCancel">Cancelar</button>
+      <button class="btn btn-primary" id="recurScopeConfirm">Continuar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Time picker dropdown -->
 <div class="time-picker-dropdown" id="timePicker" style="display:none">
   <div class="time-picker-inner" id="timePickerInner"></div>

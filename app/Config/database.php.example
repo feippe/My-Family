@@ -1,0 +1,13 @@
+<?php
+/**
+ * Configuración de base de datos.
+ * Copiá este archivo como database.php y completá los valores reales.
+ *   cp app/Config/database.php.example app/Config/database.php
+ */
+return [
+    'host'    => 'localhost',
+    'dbname'  => 'familycal',
+    'user'    => 'tu_usuario_db',
+    'pass'    => 'tu_password_db',
+    'charset' => 'utf8mb4',
+];
