@@ -80,6 +80,37 @@ document.getElementById('mobileAddEvent')?.addEventListener('click', () => {
 /* ── PWA service worker ──────────────────────────── */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(reg => {
+        reg.update().catch(() => {});
+
+        // Reload once when a new SW takes control so fresh assets are used.
+        // sessionStorage flag prevents an infinite reload loop.
+        const reloadOnce = () => {
+          if (!sessionStorage.getItem('sw_reloaded')) {
+            sessionStorage.setItem('sw_reloaded', '1');
+            location.reload();
+          }
+        };
+
+        // New SW already waiting (e.g. tab was kept open) → activate it now
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          navigator.serviceWorker.addEventListener('controllerchange', reloadOnce, { once: true });
+        }
+
+        // New SW found by the update() check above
+        reg.addEventListener('updatefound', () => {
+          const nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener('statechange', () => {
+            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+              nw.postMessage({ type: 'SKIP_WAITING' });
+              navigator.serviceWorker.addEventListener('controllerchange', reloadOnce, { once: true });
+            }
+          });
+        });
+      })
+      .catch(() => {});
   });
 }
