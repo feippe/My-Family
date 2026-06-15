@@ -120,17 +120,22 @@ class AuthController extends Controller {
             return;
         }
 
-        // Always show the same success message (don't leak whether email exists)
-        $user = $this->users->findByEmail($email);
-        if ($user) {
-            $resetModel = new PasswordReset();
-            $token = $resetModel->create($email);
-            $appUrl = rtrim((require BASE_PATH . '/app/Config/app.php')['url'], '/');
-            $resetUrl = $appUrl . '/reset-password/' . $token;
+        // Always show the same success message (don't leak whether email exists),
+        // and never blank out on a DB/mail failure — log it and degrade gracefully.
+        try {
+            $user = $this->users->findByEmail($email);
+            if ($user) {
+                $resetModel = new PasswordReset();
+                $token = $resetModel->create($email);
+                $appUrl = rtrim((require BASE_PATH . '/app/Config/app.php')['url'], '/');
+                $resetUrl = $appUrl . '/reset-password/' . $token;
 
-            $mail = new MailService();
-            $html = $mail->buildPasswordResetEmail($user['name'], $resetUrl);
-            $mail->send($email, 'Restablecer contraseña — Familia', $html);
+                $mail = new MailService();
+                $html = $mail->buildPasswordResetEmail($user['name'], $resetUrl);
+                $mail->send($email, 'Restablecer contraseña — Familia', $html);
+            }
+        } catch (\Throwable $e) {
+            error_log('[forgot-password] ' . $e->getMessage());
         }
 
         $this->view->render('auth/forgot', ['sent' => true], 'auth');

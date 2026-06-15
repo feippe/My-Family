@@ -8,6 +8,14 @@ class App {
         session_name($cfg['session_name']);
         session_start();
 
+        // Apply any pending DB migrations (best-effort — never take the site
+        // down if this fails; the affected feature will surface its own error).
+        try {
+            Migrator::run(Database::getInstance());
+        } catch (\Throwable $e) {
+            error_log('[Migrator] ' . $e->getMessage());
+        }
+
         $router = new Router();
         $this->registerRoutes($router);
         $router->dispatch();
