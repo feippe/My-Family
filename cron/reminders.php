@@ -19,6 +19,11 @@ spl_autoload_register(function (string $class): void {
     if (file_exists($file)) require_once $file;
 });
 
+// CLI never boots App, so apply the same timezone the web app uses; otherwise
+// "now" defaults to UTC and reminders fire ~3h off from local (-3) event times.
+$appCfg = require BASE_PATH . '/app/Config/app.php';
+date_default_timezone_set($appCfg['timezone']);
+
 // Apply any pending DB migrations before running (same as boot).
 try {
     \App\Core\Migrator::run(\App\Core\Database::getInstance());

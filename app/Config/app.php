@@ -7,7 +7,7 @@ $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
 return [
     'name'         => 'Familia',
     'url'          => "{$scheme}://{$host}",
-    'timezone'     => 'America/Argentina/Buenos_Aires',
+    'timezone'     => 'America/Montevideo',
     'debug'        => false,
     'session_name' => 'familycal_sess',
     'locale'       => 'es_AR',
