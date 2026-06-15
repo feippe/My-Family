@@ -46,4 +46,8 @@ class User extends Model {
     public function updateProfile(int $id, array $data): bool {
         return $this->updateById($id, $data);
     }
+
+    public function setPassword(int $id, string $password): bool {
+        return $this->updateById($id, ['password' => password_hash($password, PASSWORD_DEFAULT)]);
+    }
 }

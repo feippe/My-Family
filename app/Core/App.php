@@ -20,6 +20,10 @@ class App {
         $r->get('register',  'AuthController@registerForm');
         $r->post('register', 'AuthController@register');
         $r->get('logout',    'AuthController@logout');
+        $r->get('forgot-password',          'AuthController@forgotForm');
+        $r->post('forgot-password',         'AuthController@forgot');
+        $r->get('reset-password/{token}',   'AuthController@resetForm');
+        $r->post('reset-password/{token}',  'AuthController@reset');
 
         // Calendar
         $r->get('',         'CalendarController@index');

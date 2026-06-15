@@ -111,6 +111,42 @@ class MailService {
         return str_starts_with($response, '2');
     }
 
+    public function buildPasswordResetEmail(string $recipientName, string $resetUrl): string {
+        $appUrl = rtrim((require BASE_PATH . '/app/Config/app.php')['url'], '/');
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{margin:0;padding:0;background:#f4f4f8;font-family:'Helvetica Neue',Arial,sans-serif}
+  .wrap{max-width:520px;margin:40px auto;background:#1a1a35;border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.3)}
+  .top{background:linear-gradient(135deg,#7c3aed,#9d5ff3);padding:32px 32px 24px;text-align:center}
+  .top h1{color:#fff;margin:8px 0 4px;font-size:1.1rem;font-weight:700}
+  .body{padding:28px 32px}
+  .hi{color:#9898b8;font-size:.9rem;margin-bottom:16px}
+  .message{color:#c0c0e0;font-size:.9rem;line-height:1.6;margin:16px 0}
+  .btn{display:inline-block;background:linear-gradient(135deg,#7c3aed,#9d5ff3);color:#fff!important;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:.9rem;margin-top:8px}
+  .note{color:#606080;font-size:.8rem;margin-top:20px;line-height:1.5}
+  .footer{padding:16px 32px;border-top:1px solid #252545;color:#606080;font-size:.75rem;text-align:center}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>Familia</h1>
+  </div>
+  <div class="body">
+    <p class="hi">Hola, {$recipientName}</p>
+    <p class="message">Recibimos una solicitud para restablecer la contraseña de tu cuenta. Hacé clic en el botón para continuar.</p>
+    <a href="{$resetUrl}" class="btn">Restablecer contraseña</a>
+    <p class="note">Este enlace expira en 1 hora. Si no solicitaste este cambio, podés ignorar este email.</p>
+  </div>
+  <div class="footer">Familia &middot; <a href="{$appUrl}" style="color:#7c3aed">{$appUrl}</a></div>
+</div>
+</body>
+</html>
+HTML;
+    }
+
     public function buildEventNotificationEmail(string $recipientName, string $eventTitle, string $eventStart, string $message, string $actionUrl): string {
         $appUrl = rtrim((require BASE_PATH . '/app/Config/app.php')['url'], '/');
         return <<<HTML
