@@ -1407,6 +1407,9 @@ img, svg { display: block; }
   .fc-timeGridWeek-view .fc-event-title { display: block; font-size: 0.75rem; }
   .fc-timeGridWeek-view .fc-event-time  { display: block; font-size: 0.7rem; opacity: 0.85; }
 }
+/* Day view: hide the column header (day name) — the date is already shown
+   in the day strip above, so this row is redundant. */
+.fc-timeGridDay-view .fc-col-header { display: none; }
 /* Day view: always show title + time */
 .fc-timeGridDay-view .fc-event-title { display: block !important; font-size: 0.85rem !important; font-weight: 600 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fc-timeGridDay-view .fc-event-time  { display: block !important; font-size: 0.72rem !important; opacity: 0.8; }
