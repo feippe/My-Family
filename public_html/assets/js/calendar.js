@@ -527,7 +527,7 @@
   try {
     calendar = new FullCalendar.Calendar(el, {
       locale:          'es',
-      initialView:     'timeGridWeek',
+      initialView:     'timeGridDay',
       firstDay:        1,
       headerToolbar:   false,
       height:          calcHeight(),
