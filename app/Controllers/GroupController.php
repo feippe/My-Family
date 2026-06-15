@@ -90,6 +90,29 @@ class GroupController extends Controller {
         $this->json(['success' => true]);
     }
 
+    public function updateMemberColor(array $p = []): void {
+        $this->requireAuth();
+        $groupId  = $this->auth->groupId();
+        $targetId = (int)($p['id'] ?? 0);
+        $data     = $this->body();
+        $color    = strtolower(trim($data['color'] ?? ''));
+
+        if (!$groupId || !$targetId) {
+            $this->json(['error' => 'Solicitud inválida'], 422);
+        }
+        if (!preg_match('/^#[0-9a-f]{6}$/', $color)) {
+            $this->json(['error' => 'Color inválido'], 422);
+        }
+
+        $groupModel = new FamilyGroup();
+        if (!$groupModel->isMember($groupId, $targetId)) {
+            $this->json(['error' => 'El usuario no pertenece a esta familia'], 404);
+        }
+
+        (new User())->updateProfile($targetId, ['color' => $color]);
+        $this->json(['success' => true, 'color' => $color]);
+    }
+
     public function accept(array $p = []): void {
         $token    = $p['token'] ?? '';
         $invModel = new Invitation();

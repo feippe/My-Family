@@ -64,6 +64,7 @@ class App {
         $r->post('group',              'GroupController@store');
         $r->post('group/invite',       'GroupController@invite');
         $r->delete('group/members/{id}','GroupController@removeMember');
+        $r->put('group/members/{id}/color','GroupController@updateMemberColor');
         $r->get('group/accept/{token}','GroupController@accept');
 
         // Settings

@@ -543,8 +543,12 @@
 
       eventContent(arg) {
         if (arg.view.type === 'dayGridMonth') {
-          const c = arg.event.backgroundColor || 'var(--primary)';
-          return { html: `<span class="fc-event-dot" style="background:${c}"></span>` };
+          const p    = arg.event.extendedProps || {};
+          const cols = (p.participant_colors && p.participant_colors.length)
+            ? p.participant_colors
+            : [arg.event.backgroundColor || 'var(--primary)'];
+          const bg = cols.length === 1 ? cols[0] : conicSegments(cols);
+          return { html: `<span class="fc-event-dot" style="background:${bg}"></span>` };
         }
         // Week / Day (timeGrid): render time, title and participant names
         // ourselves so the title always shows and the "Ocupado" case lists
@@ -641,12 +645,17 @@
       },
 
       eventDidMount(info) {
-        // Week / Day: expose the event's own colour so the CSS can build a
-        // translucent fill + solid left accent bar from it.
+        // Week / Day: colour the event from its participants. One participant
+        // → translucent fill + solid left bar (CSS, via --ev-accent). Several
+        // → a translucent diagonal blend fill + a segmented left bar where each
+        // band is one participant's colour, so you can read who's involved.
         const isTimeGrid = info.view.type === 'timeGridWeek' || info.view.type === 'timeGridDay';
-        if (isTimeGrid && !info.event.extendedProps.is_busy) {
-          const color = info.event.backgroundColor || info.event.borderColor;
-          if (color) info.el.style.setProperty('--ev-accent', color);
+        const xp = info.event.extendedProps || {};
+        if (isTimeGrid && !xp.is_busy) {
+          const cols = (xp.participant_colors && xp.participant_colors.length)
+            ? xp.participant_colors
+            : [info.event.backgroundColor || info.event.borderColor].filter(Boolean);
+          applyTimeGridColors(info.el, cols);
         }
         if (info.event.extendedProps.is_recurring && info.view.type !== 'dayGridMonth') {
           const dot = document.createElement('span');
@@ -725,6 +734,38 @@
 })();
 
 /* ── Helpers ─────────────────────────────────────── */
+/* Build a conic-gradient that splits a circle into equal coloured segments,
+   one per participant — used for the multi-participant month-view dot. */
+function conicSegments(colors) {
+  const n = colors.length;
+  const stops = colors.map((c, i) =>
+    `${c} ${(i / n * 100).toFixed(2)}% ${((i + 1) / n * 100).toFixed(2)}%`).join(', ');
+  return `conic-gradient(from -90deg, ${stops})`;
+}
+
+/* Paint a timeGrid event from its participant colours. Single colour is left
+   to the CSS (via --ev-accent); multiple colours get a translucent diagonal
+   blend fill plus a segmented vertical left bar. */
+function applyTimeGridColors(el, colors) {
+  if (!colors.length) return;
+  if (colors.length === 1) {
+    el.style.setProperty('--ev-accent', colors[0]);
+    return;
+  }
+  const n        = colors.length;
+  const fill     = `linear-gradient(135deg, ${colors.map(c => `color-mix(in srgb, ${c} 32%, transparent)`).join(', ')})`;
+  const barStops = colors.map((c, i) =>
+    `${c} ${(i / n * 100).toFixed(2)}% ${((i + 1) / n * 100).toFixed(2)}%`).join(', ');
+  const bar      = `linear-gradient(to bottom, ${barStops})`;
+  el.style.setProperty('background-image', `${bar}, ${fill}`, 'important');
+  el.style.setProperty('background-color', 'transparent', 'important');
+  el.style.setProperty('background-size', '3px 100%, 100% 100%', 'important');
+  el.style.setProperty('background-position', 'left center, center', 'important');
+  el.style.setProperty('background-repeat', 'no-repeat, no-repeat', 'important');
+  el.style.setProperty('border', '1px solid rgba(255,255,255,.16)', 'important');
+  el.style.setProperty('border-left-width', '0', 'important');
+}
+
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

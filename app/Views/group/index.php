@@ -24,9 +24,15 @@
       </div>
       <?php endif; ?>
       <div class="member-card">
-        <div class="avatar-lg" style="background:<?= \App\Core\View::e($m['color']) ?>">
+        <button type="button" class="avatar-lg member-color-trigger"
+                style="background:<?= \App\Core\View::e($m['color']) ?>"
+                data-id="<?= (int)$m['id'] ?>" data-color="<?= \App\Core\View::e($m['color']) ?>"
+                title="Cambiar color">
           <?= \App\Core\View::e($m['avatar'] ?? mb_strtoupper(mb_substr($m['name'],0,1))) ?>
-        </div>
+          <span class="member-color-edit" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </span>
+        </button>
         <div class="member-info">
           <span class="member-name"><?= \App\Core\View::e($m['name']) ?></span>
           <span class="member-email"><?= \App\Core\View::e($m['email']) ?></span>
@@ -105,6 +111,70 @@
   copyBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(linkInput.value).then(() => window.showToast('¡Copiado!', 'success'));
   });
+})();
+
+/* ── Change a member's colour ─────────────────────── */
+(function(){
+  const PALETTE = ['#7c3aed','#2563eb','#0891b2','#0d9488','#16a34a','#65a30d',
+                   '#ca8a04','#ea580c','#dc2626','#db2777','#9333ea','#475569'];
+  let activeTrigger = null;
+
+  const pop = document.createElement('div');
+  pop.className = 'color-popover';
+  pop.innerHTML = '<div class="color-popover-grid">'
+    + PALETTE.map(c => `<button type="button" class="color-swatch" data-color="${c}" style="background:${c}"></button>`).join('')
+    + '</div>';
+  document.body.appendChild(pop);
+
+  function closePop() { pop.classList.remove('open'); activeTrigger = null; }
+
+  function openPop(trigger) {
+    activeTrigger = trigger;
+    const cur = (trigger.dataset.color || '').toLowerCase();
+    pop.querySelectorAll('.color-swatch').forEach(s =>
+      s.classList.toggle('selected', s.dataset.color.toLowerCase() === cur));
+    pop.classList.add('open');
+    // Position under the trigger, kept within the viewport
+    const r = trigger.getBoundingClientRect();
+    const pw = pop.offsetWidth, ph = pop.offsetHeight;
+    let left = r.left + window.scrollX;
+    let top  = r.bottom + window.scrollY + 8;
+    left = Math.min(left, window.scrollX + document.documentElement.clientWidth - pw - 8);
+    left = Math.max(left, window.scrollX + 8);
+    if (r.bottom + ph + 8 > window.innerHeight) top = r.top + window.scrollY - ph - 8;
+    pop.style.left = left + 'px';
+    pop.style.top  = top + 'px';
+  }
+
+  document.querySelectorAll('.member-color-trigger').forEach(trigger => {
+    trigger.addEventListener('click', e => {
+      e.stopPropagation();
+      if (activeTrigger === trigger) { closePop(); return; }
+      openPop(trigger);
+    });
+  });
+
+  pop.addEventListener('click', async e => {
+    const sw = e.target.closest('.color-swatch');
+    if (!sw || !activeTrigger) return;
+    const color   = sw.dataset.color;
+    const trigger = activeTrigger;
+    const id      = trigger.dataset.id;
+    closePop();
+    try {
+      await fc_api('PUT', APP_URL + '/group/members/' + id + '/color', { color });
+      trigger.style.background = color;
+      trigger.dataset.color = color;
+      window.showToast('Color actualizado', 'success');
+    } catch(err) {
+      window.showToast(err.message || 'No se pudo cambiar el color', 'error');
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (pop.classList.contains('open') && !pop.contains(e.target)) closePop();
+  });
+  window.addEventListener('resize', closePop);
 })();
 
 /* ── Swipe-to-delete family members ───────────────── */

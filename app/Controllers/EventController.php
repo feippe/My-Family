@@ -309,8 +309,17 @@ class EventController extends Controller {
         $canEdit   = ($vis === 'public') || $isParticipant;
         $showTitle = !$isBusy;
         $showNames = ($vis === 'public') || $isBusy;
-        $color     = $ev['color'] ?? $ev['category_color'] ?? '#7c3aed';
         $names     = array_map(fn($p) => $p['name'], $participants);
+
+        // The event colour is driven by its participants: one participant →
+        // that user's colour; several → a blend built on the front-end from
+        // each participant's colour. Fall back to the legacy event/category
+        // colour only when there are somehow no participants.
+        $pColors = [];
+        foreach ($participants as $pp) {
+            if (!empty($pp['color'])) $pColors[] = $pp['color'];
+        }
+        $color = $pColors[0] ?? $ev['color'] ?? $ev['category_color'] ?? '#7c3aed';
 
         return [
             'id'              => $ev['id'] . ($ev['instance_date'] ?? ''),
@@ -342,6 +351,7 @@ class EventController extends Controller {
                 'show_title'      => $showTitle,
                 'show_names'      => $showNames,
                 'participant_names' => $names,
+                'participant_colors' => $isBusy ? [] : $pColors,
                 'participants'    => $isBusy ? [] : $participants,
                 'instance_date'   => $ev['instance_date'] ?? null,
                 'has_exception'   => $ev['has_exception'] ?? false,
