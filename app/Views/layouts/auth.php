@@ -3,7 +3,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
 <title>FamilyCal</title>
 <link rel="icon" href="<?= $appUrl ?>/assets/images/icon-192.png" type="image/png">
 <link rel="manifest" href="<?= $appUrl ?>/manifest.json">

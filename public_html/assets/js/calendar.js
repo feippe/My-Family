@@ -627,6 +627,22 @@
     calendar.render();
     window._calendar = calendar;
 
+    // Horizontal swipe → prev / next (only when horizontal movement dominates)
+    let swipeX = null, swipeY = null;
+    el.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1) { swipeX = swipeY = null; return; }
+      swipeX = e.touches[0].clientX;
+      swipeY = e.touches[0].clientY;
+    }, { passive: true });
+    el.addEventListener('touchend', e => {
+      if (swipeX === null) return;
+      const dx = e.changedTouches[0].clientX - swipeX;
+      const dy = e.changedTouches[0].clientY - swipeY;
+      swipeX = swipeY = null;
+      if (Math.abs(dx) < 50 || Math.abs(dx) <= Math.abs(dy)) return;
+      if (dx < 0) calendar.next(); else calendar.prev();
+    }, { passive: true });
+
     window.addEventListener('resize', () => {
       window._calendar?.setOption('height', calcHeight());
     });

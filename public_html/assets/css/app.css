@@ -1244,6 +1244,8 @@ img, svg { display: block; }
 .fc-timeGridDay-view .fc-event-title { display: block !important; font-size: 0.85rem !important; font-weight: 600 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fc-timeGridDay-view .fc-event-time  { display: block !important; font-size: 0.72rem !important; opacity: 0.8; }
 .fc .fc-timegrid-slot { height: 40px; }
+.fc .fc-timegrid-slot-label,
+.fc .fc-timegrid-axis { font-size: 0.72rem !important; }
 .fc .fc-scrollgrid { border-radius: var(--r); overflow: hidden; }
 .fc .fc-view-harness { background: var(--bg-surface); border-radius: var(--r); border: 1px solid var(--border-muted); }
 
