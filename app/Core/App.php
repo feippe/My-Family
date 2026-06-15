@@ -63,6 +63,7 @@ class App {
         $r->get('group/create',        'GroupController@createForm');
         $r->post('group',              'GroupController@store');
         $r->post('group/invite',       'GroupController@invite');
+        $r->delete('group/members/{id}','GroupController@removeMember');
         $r->get('group/accept/{token}','GroupController@accept');
 
         // Settings

@@ -861,6 +861,58 @@ img, svg { display: block; }
 }
 .member-card:hover { border-color: var(--border-focus); transform: translateY(-1px); }
 .member-info { flex: 1; min-width: 0; }
+
+/* ── Swipe-to-delete (members) ───────────────────── */
+.member-swipe {
+  position: relative;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.member-swipe .member-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  border-radius: var(--r-lg);
+  background: var(--bg-card);
+  transition: transform .25s cubic-bezier(.4,0,.2,1);
+  touch-action: pan-y;
+}
+.member-swipe.open .member-card { transform: translateX(-96px); }
+/* Keep the slide snappy: no lift on hover while in a swipe row */
+.member-swipe .member-card:hover { transform: none; }
+.member-swipe.open .member-card:hover { transform: translateX(-96px); }
+
+.member-swipe-action {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+  border-radius: var(--r-lg);
+  background: var(--danger);
+}
+.member-delete-btn {
+  width: 96px;
+  border: none;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: filter var(--transition);
+}
+.member-delete-btn:hover { filter: brightness(1.1); }
+.member-delete-btn:active { filter: brightness(.95); }
+
+/* Desktop (mouse): reveal the delete action on hover, since there's no swipe */
+@media (hover: hover) and (pointer: fine) {
+  .member-swipe:not(.is-self):hover .member-card { transform: translateX(-96px); }
+}
 .member-name  { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .member-email { display: block; font-size: 0.8rem; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 

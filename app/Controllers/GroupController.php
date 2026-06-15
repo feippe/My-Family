@@ -68,6 +68,28 @@ class GroupController extends Controller {
         $this->json(['success' => true, 'link' => $link]);
     }
 
+    public function removeMember(array $p = []): void {
+        $this->requireAuth();
+        $groupId  = $this->auth->groupId();
+        $userId   = $this->auth->id();
+        $targetId = (int)($p['id'] ?? 0);
+
+        if (!$groupId || !$targetId) {
+            $this->json(['error' => 'Solicitud inválida'], 422);
+        }
+        if ($targetId === $userId) {
+            $this->json(['error' => 'No podés quitarte a vos mismo de la familia'], 422);
+        }
+
+        $groupModel = new FamilyGroup();
+        if (!$groupModel->isMember($groupId, $targetId)) {
+            $this->json(['error' => 'El usuario no pertenece a esta familia'], 404);
+        }
+
+        $groupModel->removeMember($groupId, $targetId);
+        $this->json(['success' => true]);
+    }
+
     public function accept(array $p = []): void {
         $token    = $p['token'] ?? '';
         $invModel = new Invitation();

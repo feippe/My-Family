@@ -38,4 +38,8 @@ class FamilyGroup extends Model {
     public function removeMember(int $groupId, int $userId): void {
         $this->exec('DELETE FROM family_members WHERE group_id = ? AND user_id = ?', [$groupId, $userId]);
     }
+
+    public function isMember(int $groupId, int $userId): bool {
+        return $this->qOne('SELECT 1 FROM family_members WHERE group_id = ? AND user_id = ?', [$groupId, $userId]) !== null;
+    }
 }

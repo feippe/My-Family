@@ -13,17 +13,28 @@
 
   <div class="members-grid">
     <?php foreach ($members as $m): ?>
-    <div class="member-card">
-      <div class="avatar-lg" style="background:<?= \App\Core\View::e($m['color']) ?>">
-        <?= \App\Core\View::e($m['avatar'] ?? mb_strtoupper(mb_substr($m['name'],0,1))) ?>
+    <?php $isSelf = ($m['id'] == $currentUser['id']); ?>
+    <div class="member-swipe<?= $isSelf ? ' is-self' : '' ?>" data-id="<?= (int)$m['id'] ?>">
+      <?php if (!$isSelf): ?>
+      <div class="member-swipe-action">
+        <button type="button" class="member-delete-btn" data-name="<?= \App\Core\View::e($m['name']) ?>">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <span>Borrar</span>
+        </button>
       </div>
-      <div class="member-info">
-        <span class="member-name"><?= \App\Core\View::e($m['name']) ?></span>
-        <span class="member-email"><?= \App\Core\View::e($m['email']) ?></span>
-      </div>
-      <?php if ($m['id'] == $currentUser['id']): ?>
-        <span class="badge badge-primary">Tú</span>
       <?php endif; ?>
+      <div class="member-card">
+        <div class="avatar-lg" style="background:<?= \App\Core\View::e($m['color']) ?>">
+          <?= \App\Core\View::e($m['avatar'] ?? mb_strtoupper(mb_substr($m['name'],0,1))) ?>
+        </div>
+        <div class="member-info">
+          <span class="member-name"><?= \App\Core\View::e($m['name']) ?></span>
+          <span class="member-email"><?= \App\Core\View::e($m['email']) ?></span>
+        </div>
+        <?php if ($isSelf): ?>
+          <span class="badge badge-primary">Tú</span>
+        <?php endif; ?>
+      </div>
     </div>
     <?php endforeach; ?>
   </div>
@@ -93,6 +104,96 @@
 
   copyBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(linkInput.value).then(() => window.showToast('¡Copiado!', 'success'));
+  });
+})();
+
+/* ── Swipe-to-delete family members ───────────────── */
+(function(){
+  const ACTION_W = 96;            // width revealed behind the card
+  const THRESHOLD = ACTION_W / 2; // past this, snap open
+  let openRow = null;
+
+  function closeOpen(except) {
+    if (openRow && openRow !== except) openRow.classList.remove('open');
+    if (openRow === except) return;
+    openRow = null;
+  }
+
+  document.querySelectorAll('.member-swipe:not(.is-self)').forEach(row => {
+    const card = row.querySelector('.member-card');
+    let startX = 0, startY = 0, dx = 0, dragging = false, decided = false;
+
+    card.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      dx = 0; dragging = true; decided = false;
+      card.style.transition = 'none';
+    }, { passive: true });
+
+    card.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      const mx = e.touches[0].clientX - startX;
+      const my = e.touches[0].clientY - startY;
+      if (!decided) {
+        // Ignore mostly-vertical gestures (let the page scroll)
+        if (Math.abs(my) > Math.abs(mx)) { dragging = false; return; }
+        decided = true;
+        if (openRow && openRow !== row) closeOpen(row);
+      }
+      const base = row.classList.contains('open') ? -ACTION_W : 0;
+      dx = Math.max(-ACTION_W, Math.min(0, base + mx));
+      card.style.transform = `translateX(${dx}px)`;
+    }, { passive: true });
+
+    function settle() {
+      if (!dragging) return;
+      dragging = false;
+      card.style.transition = '';
+      card.style.transform = '';
+      const shouldOpen = dx <= -THRESHOLD;
+      row.classList.toggle('open', shouldOpen);
+      openRow = shouldOpen ? row : null;
+    }
+    card.addEventListener('touchend', settle, { passive: true });
+    card.addEventListener('touchcancel', settle, { passive: true });
+
+    // Tapping an open card (not the button) closes it
+    card.addEventListener('click', () => {
+      if (row.classList.contains('open')) { row.classList.remove('open'); openRow = null; }
+    });
+
+    // Desktop fallback: the delete button is always reachable; a hover
+    // reveals it slightly so the affordance isn't mobile-only.
+    row.querySelector('.member-delete-btn')?.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const btn  = e.currentTarget;
+      const name = btn.dataset.name || 'este integrante';
+      if (!confirm(`¿Quitar a ${name} de la familia?`)) return;
+      btn.disabled = true;
+      try {
+        await fc_api('DELETE', APP_URL + '/group/members/' + row.dataset.id);
+        row.style.transition = 'opacity .2s, transform .2s, max-height .25s';
+        row.style.maxHeight = row.offsetHeight + 'px';
+        requestAnimationFrame(() => {
+          row.style.opacity = '0';
+          row.style.transform = 'translateX(-30px)';
+          row.style.maxHeight = '0';
+          row.style.margin = '0';
+          row.style.padding = '0';
+        });
+        setTimeout(() => row.remove(), 260);
+        window.showToast('Integrante quitado de la familia', 'success');
+      } catch(err) {
+        btn.disabled = false;
+        window.showToast(err.message || 'No se pudo quitar al integrante', 'error');
+      }
+    });
+  });
+
+  // Tap outside any open row closes it
+  document.addEventListener('click', e => {
+    if (openRow && !openRow.contains(e.target)) closeOpen(null);
   });
 })();
 </script>
