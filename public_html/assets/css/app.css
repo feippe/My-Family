@@ -1193,9 +1193,32 @@ img, svg { display: block; }
   padding: 1px 5px !important;
   border: none !important;
   cursor: pointer;
-  transition: filter var(--transition), transform var(--transition) !important;
+  transition: filter var(--transition), transform var(--transition), background-color var(--transition) !important;
 }
 .fc-event:hover { filter: brightness(1.15); transform: translateY(-1px); }
+
+/* ── Week / Day: translucent fill + solid left accent bar ──────────
+   Concurrent events read clearly because the fill lets the grid lines
+   (and overlapping neighbours) show through, while the 3px coloured bar
+   on the left marks exactly where each event starts. `--ev-accent` is
+   set per-event in JS from the event's own colour. */
+.fc-timegrid-event.fc-event:not(.fc-busy) {
+  background-color: color-mix(in srgb, var(--ev-accent, var(--primary)) 36%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--ev-accent, var(--primary)) 45%, transparent) !important;
+  border-left: 3px solid var(--ev-accent, var(--primary)) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+  backdrop-filter: blur(2px);
+}
+.fc-timegrid-event.fc-event:not(.fc-busy):hover {
+  background-color: color-mix(in srgb, var(--ev-accent, var(--primary)) 52%, transparent) !important;
+  filter: none;
+}
+.fc-timegrid-event .fc-event-time {
+  color: color-mix(in srgb, var(--ev-accent, #fff) 55%, #fff);
+  font-weight: 700;
+}
+.fc-timegrid-event .fc-event-title { text-shadow: 0 1px 2px rgba(0, 0, 0, .45); }
 
 /* "Ocupado" — a hybrid event seen by a non-participant: translucent with a
    dashed border so it reads as "not yours, but this slot is taken". */

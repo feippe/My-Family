@@ -641,6 +641,13 @@
       },
 
       eventDidMount(info) {
+        // Week / Day: expose the event's own colour so the CSS can build a
+        // translucent fill + solid left accent bar from it.
+        const isTimeGrid = info.view.type === 'timeGridWeek' || info.view.type === 'timeGridDay';
+        if (isTimeGrid && !info.event.extendedProps.is_busy) {
+          const color = info.event.backgroundColor || info.event.borderColor;
+          if (color) info.el.style.setProperty('--ev-accent', color);
+        }
         if (info.event.extendedProps.is_recurring && info.view.type !== 'dayGridMonth') {
           const dot = document.createElement('span');
           dot.style.cssText = 'display:inline-block;width:5px;height:5px;border-radius:50%;'
