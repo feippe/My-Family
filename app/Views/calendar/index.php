@@ -99,7 +99,7 @@
               <option value="">Sin categoría</option>
               <?php foreach ($categories as $cat): ?>
               <option value="<?= $cat['id'] ?>" data-color="<?= \App\Core\View::e($cat['color']) ?>">
-                <?= \App\Core\View::e($cat['icon'] . ' ' . $cat['name']) ?>
+                <?= \App\Core\View::e($cat['name']) ?>
               </option>
               <?php endforeach; ?>
             </select>
