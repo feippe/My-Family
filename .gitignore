@@ -24,3 +24,4 @@ Thumbs.db
 
 # Uploads (user content)
 /public_html/uploads/
+.claude/
