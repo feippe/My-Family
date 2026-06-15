@@ -48,10 +48,13 @@
       return;
     }
     const icons = {
-      event_created: '🗓',
-      event_updated: '✏️',
-      event_deleted: '🗑️',
-      invitation:    '📨',
+      event_created:      '🗓',
+      event_updated:      '✏️',
+      event_deleted:      '🗑️',
+      event_reminder:     '⏰',
+      participant_added:  '👋',
+      participant_removed:'🚪',
+      invitation:         '📨',
     };
     list.innerHTML = notifs.map(n => `
       <div class="notif-item ${n.is_read ? '' : 'unread'}" data-id="${n.id}" data-url="${n.action_url||''}">

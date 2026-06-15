@@ -1,0 +1,17 @@
+<?php
+/**
+ * Configuración del cron de recordatorios.
+ * Copiá este archivo como cron.php y poné una clave secreta larga y aleatoria:
+ *   cp app/Config/cron.php.example app/Config/cron.php
+ *
+ * Luego, en el panel de tu hosting (cPanel → Cron Jobs), programá una tarea
+ * que cada 5–10 minutos visite la URL del runner (reemplazá TU_CLAVE):
+ *
+ *   wget -q -O /dev/null "https://familia.feippe.com/cron/reminders?key=TU_CLAVE"
+ *
+ * El runner envía dos recordatorios por evento a todos los participantes:
+ * 24 horas antes y 30 minutos antes de la fecha/hora del evento.
+ */
+return [
+    'key' => 'cambiá-esto-por-una-clave-secreta-larga',
+];

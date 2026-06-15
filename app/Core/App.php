@@ -55,6 +55,9 @@ class App {
         $r->post('api/push/unsubscribe', 'PushController@unsubscribe');
         $r->get('api/push/vapid-key',    'PushController@vapidKey');
 
+        // Cron (scheduled tasks — protected by a shared secret)
+        $r->get('cron/reminders', 'CronController@reminders');
+
         // Group
         $r->get('group',               'GroupController@index');
         $r->get('group/create',        'GroupController@createForm');

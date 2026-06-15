@@ -76,4 +76,19 @@ class Event extends Model {
     public function belongsToGroup(int $eventId, int $groupId): bool {
         return $this->qOne('SELECT id FROM events WHERE id = ? AND group_id = ?', [$eventId, $groupId]) !== null;
     }
+
+    /** Non-recurring events starting within a window (for the reminder runner). */
+    public function upcomingNonRecurring(string $from, string $to): array {
+        return $this->q(
+            'SELECT * FROM events
+             WHERE is_recurring = 0 AND start_datetime BETWEEN ? AND ?
+             ORDER BY start_datetime',
+            [$from, $to]
+        );
+    }
+
+    /** All recurring events; the runner expands their upcoming occurrences. */
+    public function allRecurring(): array {
+        return $this->findAll(['is_recurring' => 1]);
+    }
 }

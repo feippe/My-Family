@@ -7,6 +7,7 @@
 app/Config/database.php
 app/Config/push.php
 app/Config/mail.php
+app/Config/cron.php
 
 # IDE
 .idea/

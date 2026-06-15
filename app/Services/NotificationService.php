@@ -99,6 +99,23 @@ class NotificationService {
         }
     }
 
+    /**
+     * Scheduled reminder, sent to every participant (no exclusions). The same
+     * notification is used for both the 24h-before and 30m-before runs.
+     */
+    public function eventReminder(array $event, array $participants): void {
+        $eventUrl = $this->eventUrl($event['id']);
+        $start    = $this->fmtDateTime($event['start_datetime']);
+        $title    = "Recordatorio: {$event['title']}";
+        $body     = "{$event['title']} — {$start}.";
+
+        foreach ($participants as $u) {
+            $this->notifModel->createForUser($u['id'], 'event_reminder', $title, $body, $eventUrl,
+                ['event_id' => $event['id']]);
+            $this->sendPush($u['id'], $title, $body, $eventUrl);
+        }
+    }
+
     public function invitation(int $groupId, string $inviteLink, array $inviter): void {
         // Email-only since the invitee might not have an account
     }
