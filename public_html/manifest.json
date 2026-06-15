@@ -17,5 +17,8 @@
     { "src": "/assets/images/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "categories": ["productivity", "lifestyle"],
-  "screenshots": []
+  "screenshots": [
+    { "src": "/assets/images/screenshot-narrow.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Calendario familiar compartido" },
+    { "src": "/assets/images/screenshot-wide.png", "sizes": "1920x1080", "type": "image/png", "form_factor": "wide", "label": "Calendario familiar compartido" }
+  ]
 }
