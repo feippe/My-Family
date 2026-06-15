@@ -1,4 +1,4 @@
--- FamilyCal Database Schema
+-- Familia Database Schema
 -- Charset: utf8mb4 | Collation: utf8mb4_unicode_ci
 
 SET NAMES utf8mb4;

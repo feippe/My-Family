@@ -8,7 +8,7 @@ return [
     'enabled'    => false,          // Cambiar a true después de configurar
     'driver'     => 'smtp',         // 'smtp' o 'mail' (mail() nativo de PHP)
     'from_email' => 'no-reply@tudominio.com',
-    'from_name'  => 'FamilyCal',
+    'from_name'  => 'Familia',
     'smtp' => [
         'host'     => 'smtp.tudominio.com',
         'port'     => 587,

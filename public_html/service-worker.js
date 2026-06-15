@@ -51,10 +51,10 @@ self.addEventListener('push', event => {
   if (!event.data) return;
   let data;
   try { data = event.data.json(); }
-  catch { data = { title: 'FamilyCal', body: event.data.text() }; }
+  catch { data = { title: 'Familia', body: event.data.text() }; }
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'FamilyCal', {
+    self.registration.showNotification(data.title || 'Familia', {
       body:    data.body   || '',
       icon:    '/assets/images/icon-192.png',
       badge:   '/assets/images/icon-192.png',

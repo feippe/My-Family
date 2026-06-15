@@ -31,7 +31,7 @@ class MailService {
         $headers .= "Content-Type: multipart/alternative; boundary=\"{$boundary}\"\r\n";
         $headers .= "From: =?UTF-8?B?" . base64_encode($name) . "?= <{$from}>\r\n";
         $headers .= "Reply-To: {$from}\r\n";
-        $headers .= "X-Mailer: FamilyCal/1.0\r\n";
+        $headers .= "X-Mailer: Familia/1.0\r\n";
 
         $body  = "--{$boundary}\r\n";
         $body .= "Content-Type: text/plain; charset=UTF-8\r\n\r\n{$plain}\r\n";
@@ -136,7 +136,7 @@ class MailService {
 <div class="wrap">
   <div class="top">
     <div class="logo">🗓</div>
-    <h1>FamilyCal</h1>
+    <h1>Familia</h1>
   </div>
   <div class="body">
     <p class="hi">Hola, {$recipientName}</p>
@@ -147,7 +147,7 @@ class MailService {
     </div>
     <a href="{$actionUrl}" class="btn">Ver en el calendario</a>
   </div>
-  <div class="footer">FamilyCal &middot; <a href="{$appUrl}" style="color:#7c3aed">{$appUrl}</a></div>
+  <div class="footer">Familia &middot; <a href="{$appUrl}" style="color:#7c3aed">{$appUrl}</a></div>
 </div>
 </body>
 </html>

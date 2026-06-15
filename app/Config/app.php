@@ -5,7 +5,7 @@ $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
 $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
 return [
-    'name'         => 'FamilyCal',
+    'name'         => 'Familia',
     'url'          => "{$scheme}://{$host}",
     'timezone'     => 'America/Argentina/Buenos_Aires',
     'debug'        => false,

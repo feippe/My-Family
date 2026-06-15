@@ -1,4 +1,4 @@
-/* FamilyCal — Notifications (in-app + push) */
+/* Familia — Notifications (in-app + push) */
 'use strict';
 
 /* ══════════════════════════════════════════════════

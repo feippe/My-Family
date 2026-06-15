@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>404 — FamilyCal</title>
+<title>404 — Familia</title>
 <style>
   body { background:#08080f; color:#f0f0ff; font-family:sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
   .wrap { text-align:center; }

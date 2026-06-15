@@ -1,4 +1,4 @@
-/* FamilyCal — Calendar + Event Form */
+/* Familia — Calendar + Event Form */
 'use strict';
 
 /* ══════════════════════════════════════════════════
@@ -653,7 +653,7 @@
     el.innerHTML = `<p style="color:#a0a0c8;font-size:.85rem;text-align:center;padding:20px">`
       + `⚠️ Error al inicializar el calendario:<br><code style="color:#f97;font-size:.8rem">`
       + err.message + `</code><br><br>Presioná "Actualizar aplicación" en Ajustes.</p>`;
-    console.error('[FamilyCal] FullCalendar init error:', err);
+    console.error('[Familia] FullCalendar init error:', err);
   }
 })();
 

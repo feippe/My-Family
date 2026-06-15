@@ -1,6 +1,6 @@
 {
-  "name": "FamilyCal",
-  "short_name": "FamilyCal",
+  "name": "Familia",
+  "short_name": "Familia",
   "description": "Calendario compartido para toda la familia",
   "start_url": "/",
   "display": "standalone",

@@ -1,4 +1,4 @@
-/* FamilyCal — Core JS */
+/* Familia — Core JS */
 'use strict';
 
 /* ── API helper ──────────────────────────────────── */

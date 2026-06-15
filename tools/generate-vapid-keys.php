@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 /**
- * VAPID key generator for FamilyCal Web Push.
+ * VAPID key generator for Familia Web Push.
  * Run from project root:  php tools/generate-vapid-keys.php
  *
  * Requires: PHP 8.1+, OpenSSL with prime256v1 (P-256) support.
