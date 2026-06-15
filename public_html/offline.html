@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>Sin conexión — Familia</title>
+<link rel="icon" href="/assets/images/icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#08080f">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:#08080f;color:#f0f0ff;
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    text-align:center;padding:24px;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:340px}
+  .badge{
+    width:84px;height:84px;margin:0 auto 20px;border-radius:24px;
+    display:flex;align-items:center;justify-content:center;color:#fff;
+    background:linear-gradient(135deg,#9d5ff3,#7c3aed);
+    box-shadow:0 0 32px rgba(124,58,237,.25);
+  }
+  .badge svg{width:48px;height:48px}
+  h1{font-size:1.3rem;font-weight:800;letter-spacing:-.03em;margin-bottom:8px}
+  p{color:#9898b8;font-size:.92rem;line-height:1.55;margin-bottom:24px}
+  button{
+    font-family:inherit;font-size:.92rem;font-weight:600;color:#fff;
+    background:linear-gradient(135deg,#7c3aed,#9d5ff3);
+    border:none;border-radius:12px;padding:12px 28px;cursor:pointer;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12.2039C2 9.91549 2 8.77128 2.5192 7.82274C3.0384 6.87421 3.98695 6.28551 5.88403 5.10813L7.88403 3.86687C9.88939 2.62229 10.8921 2 12 2C13.1079 2 14.1106 2.62229 16.116 3.86687L18.116 5.10812C20.0131 6.28551 20.9616 6.87421 21.4808 7.82274C22 8.77128 22 9.91549 22 12.2039V13.725C22 17.6258 22 19.5763 20.8284 20.7881C19.6569 22 17.7712 22 14 22H10C6.22876 22 4.34315 22 3.17157 20.7881C2 19.5763 2 17.6258 2 13.725V12.2039Z"/><path d="M9 16C9.85038 16.6303 10.8846 17 12 17C13.1154 17 14.1496 16.6303 15 16"/></svg>
+    </div>
+    <h1>Sin conexión</h1>
+    <p>No pudimos conectarnos. Revisá tu conexión a internet e intentá de nuevo.</p>
+    <button onclick="location.reload()">Reintentar</button>
+  </div>
+</body>
+</html>

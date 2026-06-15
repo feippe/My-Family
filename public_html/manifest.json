@@ -1,8 +1,12 @@
 {
+  "id": "/",
   "name": "Familia",
   "short_name": "Familia",
   "description": "Calendario compartido para toda la familia",
-  "start_url": "/",
+  "lang": "es",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#08080f",
   "theme_color": "#7c3aed",
