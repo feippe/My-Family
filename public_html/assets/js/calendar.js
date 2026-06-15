@@ -568,13 +568,13 @@
 
       datesSet(info) {
         updateTitle(info.view);
-        const strip = document.getElementById('dayWeekStrip');
-        const isDay = info.view.type === 'timeGridDay';
+        const strip  = document.getElementById('dayWeekStrip');
+        const isDay  = info.view.type === 'timeGridDay';
+        const isWeek = info.view.type === 'timeGridWeek';
         if (strip) {
           strip.style.display = isDay ? 'flex' : 'none';
           if (isDay) {
             updateDayStrip(info.view.currentStart);
-            // Scroll to ~1h before now when viewing today
             const now = new Date();
             const viewStart = new Date(info.view.currentStart);
             viewStart.setHours(0,0,0,0);
@@ -585,8 +585,19 @@
                 calendar.scrollToTime({ hours: Math.max(0, now.getHours() - 1), minutes: now.getMinutes() })
               );
             }
-            // Recalculate height after strip appears
             requestAnimationFrame(() => calendar.setOption('height', calcHeight()));
+          }
+        }
+        // Scroll to current time when the displayed week contains today
+        if (isWeek) {
+          const now       = new Date();
+          const today     = new Date(now); today.setHours(0,0,0,0);
+          const weekStart = new Date(info.view.currentStart); weekStart.setHours(0,0,0,0);
+          const weekEnd   = new Date(info.view.currentEnd);   weekEnd.setHours(0,0,0,0);
+          if (today >= weekStart && today < weekEnd) {
+            requestAnimationFrame(() =>
+              calendar.scrollToTime({ hours: Math.max(0, now.getHours() - 1), minutes: now.getMinutes() })
+            );
           }
         }
       },
