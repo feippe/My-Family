@@ -5,7 +5,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
 <title>FamilyCal</title>
+<link rel="icon" href="<?= $appUrl ?>/assets/images/icon.svg" type="image/svg+xml">
 <link rel="icon" href="<?= $appUrl ?>/assets/images/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="<?= $appUrl ?>/assets/images/icon-192.png">
 <link rel="manifest" href="<?= $appUrl ?>/manifest.json">
 <meta name="theme-color" content="#08080f">
 <link rel="preconnect" href="https://fonts.googleapis.com">

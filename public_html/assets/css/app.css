@@ -113,7 +113,15 @@ img, svg { display: block; }
   font-size: 1.1rem;
   letter-spacing: -0.02em;
 }
-.logo-icon { font-size: 1.5rem; }
+.logo-icon {
+  width: 30px; height: 30px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--primary-h), var(--primary));
+  color: #fff;
+  flex-shrink: 0;
+}
+.logo-icon svg { width: 20px; height: 20px; }
 .logo-text { background: linear-gradient(135deg, var(--primary-h), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 
 .sidebar-close { display: none; color: var(--text-2); }
@@ -1293,7 +1301,16 @@ img, svg { display: block; }
 }
 
 .auth-card-header { text-align: center; margin-bottom: 28px; }
-.auth-logo { font-size: 2.5rem; margin-bottom: 8px; }
+.auth-logo {
+  width: 72px; height: 72px;
+  margin: 0 auto 8px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--primary-h), var(--primary));
+  box-shadow: var(--glow-p);
+  color: #fff;
+}
+.auth-logo svg { width: 42px; height: 42px; }
 .auth-title { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.03em; }
 .auth-subtitle { color: var(--text-2); font-size: 0.88rem; margin-top: 4px; }
 
