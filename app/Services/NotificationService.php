@@ -3,7 +3,6 @@ namespace App\Services;
 
 use App\Models\Notification;
 use App\Models\PushSubscription;
-use App\Models\User;
 
 class NotificationService {
     private Notification     $notifModel;
@@ -26,39 +25,72 @@ class NotificationService {
         }
     }
 
-    public function eventCreated(array $event, array $participants, int $actorId): void {
-        $calUrl   = rtrim((require BASE_PATH . '/app/Config/app.php')['url'], '/') . '/calendar';
-        $title    = "Nuevo evento: {$event['title']}";
+    public function eventCreated(array $event, array $participants, int $actorId, string $actorName = ''): void {
+        $eventUrl = $this->eventUrl($event['id']);
         $start    = $this->fmtDateTime($event['start_datetime']);
-        $body     = "Fuiste agregado/a a '{$event['title']}' el {$start}.";
+        $title    = "Nuevo evento: {$event['title']}";
+        $by       = $actorName ? " por {$actorName}" : '';
+        $body     = "Fuiste agregado/a al evento '{$event['title']}' el {$start}{$by}.";
 
         foreach ($participants as $u) {
             if ($u['id'] == $actorId) continue;
-            $this->notifModel->createForUser($u['id'], 'event_created', $title, $body, $calUrl,
+            $this->notifModel->createForUser($u['id'], 'event_created', $title, $body, $eventUrl,
                 ['event_id' => $event['id']]);
-            $this->sendPush($u['id'], $title, $body, $calUrl);
-            $this->sendMail($u['email'], $u['name'], $title, $event['title'], $start, $body, $calUrl);
+            $this->sendPush($u['id'], $title, $body, $eventUrl);
+            $this->sendMail($u['email'], $u['name'], $title, $event['title'], $start, $body, $eventUrl);
         }
     }
 
-    public function eventUpdated(array $event, array $participants, int $actorId): void {
-        $calUrl = rtrim((require BASE_PATH . '/app/Config/app.php')['url'], '/') . '/calendar';
-        $title  = "Evento actualizado: {$event['title']}";
-        $start  = $this->fmtDateTime($event['start_datetime']);
-        $body   = "El evento '{$event['title']}' fue modificado.";
+    public function eventUpdated(array $event, array $participants, int $actorId, string $actorName = ''): void {
+        $eventUrl = $this->eventUrl($event['id']);
+        $start    = $this->fmtDateTime($event['start_datetime']);
+        $title    = "Fecha/hora cambiada: {$event['title']}";
+        $by       = $actorName ? " por {$actorName}" : '';
+        $body     = "El evento '{$event['title']}' fue movido al {$start}{$by}.";
 
         foreach ($participants as $u) {
             if ($u['id'] == $actorId) continue;
-            $this->notifModel->createForUser($u['id'], 'event_updated', $title, $body, $calUrl,
+            $this->notifModel->createForUser($u['id'], 'event_updated', $title, $body, $eventUrl,
                 ['event_id' => $event['id']]);
+            $this->sendPush($u['id'], $title, $body, $eventUrl);
+        }
+    }
+
+    public function participantsAdded(array $event, array $newParticipants, int $actorId, string $actorName = ''): void {
+        $eventUrl = $this->eventUrl($event['id']);
+        $start    = $this->fmtDateTime($event['start_datetime']);
+        $title    = "Te agregaron a: {$event['title']}";
+        $by       = $actorName ? $actorName : 'Alguien';
+        $body     = "{$by} te agregó al evento '{$event['title']}' el {$start}.";
+
+        foreach ($newParticipants as $u) {
+            if ($u['id'] == $actorId) continue;
+            $this->notifModel->createForUser($u['id'], 'participant_added', $title, $body, $eventUrl,
+                ['event_id' => $event['id']]);
+            $this->sendPush($u['id'], $title, $body, $eventUrl);
+        }
+    }
+
+    public function participantsRemoved(string $eventTitle, array $removedParticipants, int $actorId, string $actorName = ''): void {
+        $appUrl = rtrim((require BASE_PATH . '/app/Config/app.php')['url'], '/');
+        $calUrl = $appUrl . '/calendar';
+        $title  = "Ya no participás en: {$eventTitle}";
+        $by     = $actorName ? $actorName : 'Alguien';
+        $body   = "{$by} te quitó del evento '{$eventTitle}'.";
+
+        foreach ($removedParticipants as $u) {
+            if ($u['id'] == $actorId) continue;
+            $this->notifModel->createForUser($u['id'], 'participant_removed', $title, $body, $calUrl);
             $this->sendPush($u['id'], $title, $body, $calUrl);
         }
     }
 
-    public function eventDeleted(string $eventTitle, array $participants, int $actorId): void {
-        $calUrl = rtrim((require BASE_PATH . '/app/Config/app.php')['url'], '/') . '/calendar';
+    public function eventDeleted(string $eventTitle, array $participants, int $actorId, string $actorName = ''): void {
+        $appUrl = rtrim((require BASE_PATH . '/app/Config/app.php')['url'], '/');
+        $calUrl = $appUrl . '/calendar';
         $title  = "Evento eliminado: {$eventTitle}";
-        $body   = "El evento '{$eventTitle}' fue eliminado.";
+        $by     = $actorName ? " por {$actorName}" : '';
+        $body   = "El evento '{$eventTitle}' fue eliminado{$by}.";
 
         foreach ($participants as $u) {
             if ($u['id'] == $actorId) continue;
@@ -69,6 +101,11 @@ class NotificationService {
 
     public function invitation(int $groupId, string $inviteLink, array $inviter): void {
         // Email-only since the invitee might not have an account
+    }
+
+    private function eventUrl(int $eventId): string {
+        $appUrl = rtrim((require BASE_PATH . '/app/Config/app.php')['url'], '/');
+        return $appUrl . '/?open_event=' . $eventId;
     }
 
     private function sendPush(int $userId, string $title, string $body, string $url): void {

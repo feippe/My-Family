@@ -551,6 +551,37 @@
   }
 })();
 
+/* ── Open event modal from push notification tap ─── */
+(function openFromPushTap() {
+  const openId = new URLSearchParams(window.location.search).get('open_event');
+  if (!openId || !/^\d+$/.test(openId)) return;
+  history.replaceState({}, '', window.location.pathname);
+  setTimeout(() => {
+    fetch(APP_URL + '/api/events/' + openId)
+      .then(r => r.ok ? r.json() : null)
+      .then(ev => {
+        if (!ev || ev.error) return;
+        window.openEventModal?.(null, {
+          event_id:      ev.id,
+          title:         ev.title,
+          start:         ev.start_datetime,
+          end:           ev.end_datetime,
+          extendedProps: {
+            description:     ev.description,
+            location:        ev.location,
+            category_id:     ev.category_id,
+            visibility:      ev.visibility,
+            participants:    ev.participants || [],
+            is_recurring:    !!ev.is_recurring,
+            recurrence_type: ev.recurrence_type,
+            instance_date:   null,
+          }
+        });
+      })
+      .catch(() => {});
+  }, 800);
+})();
+
 /* ── Helpers ─────────────────────────────────────── */
 function fmtDate(d) {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');

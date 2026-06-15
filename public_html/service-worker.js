@@ -1,11 +1,24 @@
 const APP_VERSION = '__APP_VERSION__';
 // Cache name tied to the deploy version → every deploy gets a fresh cache,
 // and the old one is purged on activate. No more stale JS/CSS after a push.
-const CACHE_NAME  = 'familycal-' + APP_VERSION;
+const CACHE_NAME  = 'familia-' + APP_VERSION;
+const OFFLINE_URL = '/offline.html';
 
-self.addEventListener('install', () => {
-  // Activate the new SW immediately without waiting for old tabs to close.
-  self.skipWaiting();
+// App-shell assets worth having available before the first offline navigation.
+const PRECACHE = [
+  OFFLINE_URL,
+  '/assets/images/icon.svg',
+  '/assets/images/icon-192.png',
+];
+
+self.addEventListener('install', event => {
+  // Precache the offline shell, then activate immediately.
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(PRECACHE))
+      .catch(() => {})
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', event => {
@@ -32,7 +45,13 @@ self.addEventListener('fetch', event => {
         }
         return response;
       })
-      .catch(() => caches.match(request))
+      .catch(async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        // No cached copy → show the branded offline page for page navigations.
+        if (request.mode === 'navigate') return caches.match(OFFLINE_URL);
+        return Response.error();
+      })
   );
 });
 
@@ -51,16 +70,17 @@ self.addEventListener('push', event => {
   if (!event.data) return;
   let data;
   try { data = event.data.json(); }
-  catch { data = { title: 'FamilyCal', body: event.data.text() }; }
+  catch { data = { title: 'Familia', body: event.data.text() }; }
 
+  const tag = data.url ? 'familia-' + encodeURIComponent(data.url) : 'familia-event';
   event.waitUntil(
-    self.registration.showNotification(data.title || 'FamilyCal', {
-      body:    data.body   || '',
-      icon:    '/assets/images/icon-192.png',
-      badge:   '/assets/images/icon-192.png',
-      data:    { url: data.url || '/' },
-      vibrate: [100, 50, 100],
-      tag:     'familycal-event',
+    self.registration.showNotification(data.title || 'Familia', {
+      body:     data.body   || '',
+      icon:     '/assets/images/icon-192.png',
+      badge:    '/assets/images/icon-192.png',
+      data:     { url: data.url || '/' },
+      vibrate:  [100, 50, 100],
+      tag:      tag,
       renotify: true,
     })
   );
