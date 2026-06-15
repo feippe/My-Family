@@ -10,11 +10,10 @@
       <button class="btn-icon" id="calNext" aria-label="Siguiente">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
-      <h2 class="cal-title" id="calTitle"></h2>
     </div>
     <div class="cal-views">
-      <button class="view-btn active" data-view="dayGridMonth">Mes</button>
-      <button class="view-btn" data-view="timeGridWeek">Semana</button>
+      <button class="view-btn" data-view="dayGridMonth">Mes</button>
+      <button class="view-btn active" data-view="timeGridWeek">Semana</button>
       <button class="view-btn" data-view="timeGridDay">Día</button>
     </div>
     <button class="btn btn-primary btn-sm" id="addEventBtn">
@@ -112,9 +111,9 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 <span>Público</span>
               </button>
-              <button type="button" class="vis-btn" data-value="hybrid" title="Híbrido: muestra ocupado pero no detalles">
+              <button type="button" class="vis-btn" data-value="hybrid" title="Ocupado: muestra ocupado pero no los detalles">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                <span>Híbrido</span>
+                <span>Ocupado</span>
               </button>
               <button type="button" class="vis-btn" data-value="private" title="Privado: solo vos lo ves">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -297,13 +296,10 @@
       </form>
     </div>
     <div class="modal-footer">
+      <button type="button" class="btn btn-danger" id="eventDeleteBtn" style="display:none">Eliminar</button>
       <button type="button" class="btn btn-ghost" id="eventModalCancel">Cancelar</button>
-      <button type="button" class="btn btn-danger" id="eventDeleteBtn" style="display:none">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-        Eliminar
-      </button>
       <button type="submit" form="eventForm" class="btn btn-primary" id="eventSaveBtn">
-        <span id="eventSaveTxt">Crear evento</span>
+        <span id="eventSaveTxt">Guardar</span>
       </button>
     </div>
   </div>

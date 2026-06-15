@@ -1195,15 +1195,15 @@ img, svg { display: block; }
 /* ── Month view: event dots ──────────────────────── */
 /* Fixed event area height so day numbers never shift position */
 .fc-dayGridMonth-view .fc-daygrid-day-events {
-  min-height: 12px;
-  max-height: 12px;
+  min-height: 18px;
+  max-height: 18px;
   overflow: hidden;
   display: flex !important;
   flex-wrap: wrap;
-  gap: 2px;
+  gap: 3px;
   padding: 3px 4px !important;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   margin: 0 !important;
 }
 .fc-dayGridMonth-view .fc-daygrid-event-harness { margin: 0 !important; height: auto; }
@@ -1219,10 +1219,14 @@ img, svg { display: block; }
 .fc-dayGridMonth-view .fc-daygrid-more-link { display: none; }
 .fc-event-dot {
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+@media (max-width: 768px) {
+  .fc-event-dot { width: 10px; height: 10px; }
+  .fc-dayGridMonth-view .fc-daygrid-day-events { min-height: 20px; max-height: 20px; }
 }
 
 /* ── Week view: hide text on mobile ──────────────── */
@@ -1374,7 +1378,11 @@ img, svg { display: block; }
 }
 
 @media (max-width: 480px) {
-  .visibility-group { flex-direction: column; }
-  .vis-btn span { display: none; }
-  .visibility-group .vis-btn { justify-content: center; flex: 0 0 auto; }
+  /* Keep label visible — icon alone is ambiguous. Stack icon over text. */
+  .vis-btn {
+    flex-direction: column;
+    gap: 3px;
+    padding: 7px 4px;
+    font-size: 0.72rem;
+  }
 }

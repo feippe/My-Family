@@ -250,7 +250,7 @@
       editingId = eventData.event_id;
       currentInstanceDate = eventData.extendedProps?.instance_date || null;
       title.textContent  = 'Editar evento';
-      saveTxt.textContent = 'Guardar cambios';
+      saveTxt.textContent = 'Guardar';
       delBtn.style.display = '';
 
       document.getElementById('evTitle').value = eventData.title;
@@ -290,13 +290,23 @@
       document.getElementById('evEndTime').value   = fmtTime(end);
     } else {
       title.textContent   = 'Nuevo evento';
-      saveTxt.textContent = 'Crear evento';
+      saveTxt.textContent = 'Guardar';
       if (dateStr) {
-        const d = new Date(dateStr);
+        const d        = new Date(dateStr);
+        // A datetime (long-press in week/day) includes 'T'; a date-only
+        // string (month) does not → keep the 09:00–10:00 default.
+        const hasTime  = typeof dateStr === 'string' && dateStr.includes('T');
         document.getElementById('evStartDate').value = fmtDate(d);
-        document.getElementById('evEndDate').value   = fmtDate(d);
-        document.getElementById('evStartTime').value = '09:00';
-        document.getElementById('evEndTime').value   = '10:00';
+        if (hasTime) {
+          const end = new Date(d.getTime() + 60 * 60 * 1000);
+          document.getElementById('evStartTime').value = fmtTime(d);
+          document.getElementById('evEndDate').value   = fmtDate(end);
+          document.getElementById('evEndTime').value   = fmtTime(end);
+        } else {
+          document.getElementById('evEndDate').value   = fmtDate(d);
+          document.getElementById('evStartTime').value = '09:00';
+          document.getElementById('evEndTime').value   = '10:00';
+        }
       }
       // Check current user by default
       document.querySelectorAll('.participant-check').forEach(c => {
@@ -515,16 +525,18 @@
   try {
     calendar = new FullCalendar.Calendar(el, {
       locale:          'es',
-      initialView:     'dayGridMonth',
+      initialView:     'timeGridWeek',
       firstDay:        1,
       headerToolbar:   false,
       height:          calcHeight(),
       nowIndicator:    true,
       editable:        false,
       selectable:      true,
+      selectLongPressDelay: 500,   // touch long-press to create an event
       dayMaxEvents:    false,
       noEventsContent: 'Sin eventos',
       scrollTimeReset: false,
+      allDayText:      'Día',
       slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
 
       eventContent(arg) {
@@ -576,6 +588,15 @@
         // In other views a simple tap does nothing; long-press creates events
       },
 
+      // Long-press (touch) or drag (desktop) → create an event at the
+      // selected day+time. info.startStr carries the precise time in
+      // timeGrid views and a date-only string in month view.
+      select(info) {
+        navigator.vibrate?.(40);
+        window.openEventModal?.(info.startStr);
+        calendar.unselect();
+      },
+
       eventClick(info) {
         const ev = info.event;
         if (ev.extendedProps.is_hybrid) {
@@ -605,32 +626,6 @@
     wireToolbar(calendar);
     calendar.render();
     window._calendar = calendar;
-
-    // Long-press on a date cell (600ms) → open new-event modal
-    {
-      let _lpTimer = null, _lpDate = null, _lpX = 0, _lpY = 0;
-      el.addEventListener('pointerdown', e => {
-        if (e.target.closest('.fc-event')) return; // events handled by eventClick
-        const cell = e.target.closest('[data-date]');
-        if (!cell) return;
-        _lpDate = cell.dataset.date;
-        _lpX = e.clientX; _lpY = e.clientY;
-        _lpTimer = setTimeout(() => {
-          _lpTimer = null;
-          navigator.vibrate?.(40);
-          window.openEventModal?.(_lpDate);
-        }, 600);
-      }, { passive: true });
-      el.addEventListener('pointermove', e => {
-        if (!_lpTimer) return;
-        if (Math.abs(e.clientX - _lpX) > 10 || Math.abs(e.clientY - _lpY) > 10) {
-          clearTimeout(_lpTimer); _lpTimer = null;
-        }
-      });
-      const cancelLp = () => { clearTimeout(_lpTimer); _lpTimer = null; };
-      el.addEventListener('pointerup',     cancelLp);
-      el.addEventListener('pointercancel', cancelLp);
-    }
 
     window.addEventListener('resize', () => {
       window._calendar?.setOption('height', calcHeight());
