@@ -9,13 +9,13 @@ use App\Models\EventReminder;
 /**
  * Finds event occurrences that are due for a reminder and pushes them.
  *
- * Two reminders per occurrence: 24 hours before and 30 minutes before the
- * scheduled start. A small grace window absorbs delayed/missed cron runs;
- * a dedup table (claimed atomically) guarantees each reminder fires once.
+ * One reminder per occurrence: 30 minutes before the scheduled start. A
+ * small grace window absorbs delayed/missed cron runs; a dedup table
+ * (claimed atomically) guarantees each reminder fires once.
  */
 class ReminderService {
     /** Seconds before start at which each reminder fires. */
-    private const OFFSETS = ['24h' => 86400, '30m' => 1800];
+    private const OFFSETS = ['30m' => 1800];
 
     /** How late a reminder may still fire after its scheduled moment. */
     private const GRACE = 3600;
@@ -36,8 +36,9 @@ class ReminderService {
     public function run(?\DateTime $now = null): array {
         $now  = $now ?: new \DateTime();
         $from = $now->format('Y-m-d H:i:s');
-        // Widest horizon we ever need is the 24h reminder, +1h of grace.
-        $to   = (clone $now)->modify('+25 hours')->format('Y-m-d H:i:s');
+        // Only the 30-minute reminder remains; a 2h horizon comfortably covers
+        // it plus the grace window.
+        $to   = (clone $now)->modify('+2 hours')->format('Y-m-d H:i:s');
 
         $checked = 0;
         $pushed  = 0;
