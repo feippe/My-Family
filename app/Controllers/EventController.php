@@ -89,7 +89,7 @@ class EventController extends Controller {
         // Notify participants
         try {
             $svc = new NotificationService();
-            $svc->eventCreated($created, $created['participants'], $userId);
+            $svc->eventCreated($created, $created['participants'], $userId, $this->auth->user()['name'] ?? '');
         } catch (\Throwable) {}
 
         $this->json(['success' => true, 'event' => $this->toFC($created, $userId)]);
@@ -174,6 +174,13 @@ class EventController extends Controller {
     }
 
     private function applyUpdate(int $eventId, array $data, int $userId, array $ev): void {
+        // Detect date/time change before applying the update
+        $dateChanged = (isset($data['start_datetime']) && $data['start_datetime'] !== $ev['start_datetime'])
+                    || (isset($data['end_datetime'])   && $data['end_datetime']   !== $ev['end_datetime']);
+
+        // Snapshot current participants before any participant change
+        $oldParticipants = isset($data['participants']) ? $this->events->getParticipantUsers($eventId) : [];
+
         $allowed = ['title','description','location','category_id','visibility','color',
                     'start_datetime','end_datetime','all_day','is_recurring',
                     'recurrence_type','recurrence_end'];
@@ -187,17 +194,39 @@ class EventController extends Controller {
         $updateData['updated_at'] = date('Y-m-d H:i:s');
         $this->events->updateById($eventId, $updateData);
 
+        $newParticipants = null;
         if (isset($data['participants'])) {
             $parts = $data['participants'];
             if (!in_array($userId, $parts)) $parts[] = $userId;
             $this->events->setParticipants($eventId, $parts);
+            $newParticipants = $this->events->getParticipantUsers($eventId);
         }
 
-        $updated = $this->events->withParticipants($eventId);
+        $updated   = $this->events->withParticipants($eventId);
+        $actorName = $this->auth->user()['name'] ?? '';
 
         try {
             $svc = new NotificationService();
-            $svc->eventUpdated($updated, $updated['participants'], $userId);
+
+            if ($dateChanged) {
+                $svc->eventUpdated($updated, $updated['participants'], $userId, $actorName);
+            }
+
+            if ($newParticipants !== null) {
+                $oldIds     = array_column($oldParticipants, 'id');
+                $newIds     = array_column($newParticipants, 'id');
+                $addedIds   = array_diff($newIds, $oldIds);
+                $removedIds = array_diff($oldIds, $newIds);
+
+                if ($addedIds) {
+                    $added = array_values(array_filter($newParticipants, fn($u) => in_array($u['id'], $addedIds)));
+                    $svc->participantsAdded($updated, $added, $userId, $actorName);
+                }
+                if ($removedIds) {
+                    $removed = array_values(array_filter($oldParticipants, fn($u) => in_array($u['id'], $removedIds)));
+                    $svc->participantsRemoved($updated['title'], $removed, $userId, $actorName);
+                }
+            }
         } catch (\Throwable) {}
 
         $this->json(['success' => true, 'event' => $this->toFC($updated, $userId)]);
@@ -235,7 +264,7 @@ class EventController extends Controller {
 
         try {
             $svc = new NotificationService();
-            $svc->eventDeleted($evTitle, $participants, $userId);
+            $svc->eventDeleted($evTitle, $participants, $userId, $this->auth->user()['name'] ?? '');
         } catch (\Throwable) {}
 
         $this->json(['success' => true]);

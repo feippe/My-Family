@@ -72,14 +72,15 @@ self.addEventListener('push', event => {
   try { data = event.data.json(); }
   catch { data = { title: 'Familia', body: event.data.text() }; }
 
+  const tag = data.url ? 'familia-' + encodeURIComponent(data.url) : 'familia-event';
   event.waitUntil(
     self.registration.showNotification(data.title || 'Familia', {
-      body:    data.body   || '',
-      icon:    '/assets/images/icon-192.png',
-      badge:   '/assets/images/icon-192.png',
-      data:    { url: data.url || '/' },
-      vibrate: [100, 50, 100],
-      tag:     'familia-event',
+      body:     data.body   || '',
+      icon:     '/assets/images/icon-192.png',
+      badge:    '/assets/images/icon-192.png',
+      data:     { url: data.url || '/' },
+      vibrate:  [100, 50, 100],
+      tag:      tag,
       renotify: true,
     })
   );
