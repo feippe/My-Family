@@ -1196,7 +1196,26 @@ img, svg { display: block; }
   transition: filter var(--transition), transform var(--transition) !important;
 }
 .fc-event:hover { filter: brightness(1.15); transform: translateY(-1px); }
-.fc-hybrid { opacity: 0.65; }
+
+/* "Ocupado" — a hybrid event seen by a non-participant: translucent with a
+   dashed border so it reads as "not yours, but this slot is taken". */
+.fc-event.fc-busy {
+  opacity: .5 !important;
+  border: 1.5px dashed rgba(255, 255, 255, .7) !important;
+  background-image: repeating-linear-gradient(45deg,
+    rgba(255, 255, 255, .10) 0 6px, transparent 6px 12px);
+  cursor: default;
+}
+.fc-event.fc-busy:hover { filter: none; transform: none; }
+.fc-event-busy-label { font-style: italic; }
+.fc-event-names {
+  font-size: 0.68rem;
+  font-weight: 500;
+  opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .fc-timegrid-event .fc-event-main { padding: 3px 6px; }
 .fc-list-event-title a { color: var(--text-1) !important; }
@@ -1244,7 +1263,8 @@ img, svg { display: block; }
 /* ── Week view: hide text on mobile ──────────────── */
 @media (max-width: 768px) {
   .fc-timeGridWeek-view .fc-event-title,
-  .fc-timeGridWeek-view .fc-event-time { display: none; }
+  .fc-timeGridWeek-view .fc-event-time,
+  .fc-timeGridWeek-view .fc-event-names { display: none; }
   .fc-timeGridWeek-view .fc-timegrid-event .fc-event-main { padding: 2px !important; }
 }
 /* Week view desktop: show title */

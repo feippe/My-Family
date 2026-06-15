@@ -546,6 +546,18 @@
           const c = arg.event.backgroundColor || 'var(--primary)';
           return { html: `<span class="fc-event-dot" style="background:${c}"></span>` };
         }
+        // Week / Day (timeGrid): render time, title and participant names
+        // ourselves so the title always shows and the "Ocupado" case lists
+        // who is busy without leaking the real title.
+        const p = arg.event.extendedProps || {};
+        let html = '';
+        if (arg.timeText) html += `<div class="fc-event-time">${arg.timeText}</div>`;
+        const titleCls = p.show_title === false ? 'fc-event-title fc-event-busy-label' : 'fc-event-title';
+        html += `<div class="${titleCls}">${escapeHtml(arg.event.title || '')}</div>`;
+        if (p.show_names && p.participant_names && p.participant_names.length) {
+          html += `<div class="fc-event-names">${escapeHtml(p.participant_names.join(', '))}</div>`;
+        }
+        return { html };
       },
 
       events(info, ok, fail) {
@@ -601,16 +613,19 @@
 
       eventClick(info) {
         const ev = info.event;
-        if (ev.extendedProps.is_hybrid) {
-          window.showToast?.('Este evento es privado', 'info');
+        const p  = ev.extendedProps || {};
+        // "Ocupado" (hybrid seen by a non-participant): read-only, just show who's busy.
+        if (p.is_busy || p.can_edit === false) {
+          const names = (p.participant_names || []).join(', ');
+          window.showToast?.(names ? `Ocupado — ${names}` : 'Horario ocupado', 'info');
           return;
         }
         window.openEventModal?.(null, {
-          event_id: ev.extendedProps.event_id,
+          event_id: p.event_id,
           title:    ev.title,
           start:    ev.startStr,
           end:      ev.endStr,
-          extendedProps: ev.extendedProps,
+          extendedProps: p,
         });
       },
 
@@ -669,6 +684,7 @@
       .then(r => r.ok ? r.json() : null)
       .then(ev => {
         if (!ev || ev.error) return;
+        if (ev.busy) { window.showToast?.('Horario ocupado', 'info'); return; }
         window.openEventModal?.(null, {
           event_id:      ev.id,
           title:         ev.title,
@@ -691,6 +707,10 @@
 })();
 
 /* ── Helpers ─────────────────────────────────────── */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
 function fmtDate(d) {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }

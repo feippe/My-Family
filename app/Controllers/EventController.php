@@ -38,10 +38,24 @@ class EventController extends Controller {
 
         $ev = $this->events->withParticipants($eventId);
         if (!$ev || $ev['group_id'] != $groupId) $this->json(['error' => 'No encontrado'], 404);
-        if ($ev['visibility'] === 'private' && $ev['creator_id'] != $userId) $this->json(['error' => 'Sin acceso'], 403);
 
-        if ($ev['visibility'] === 'hybrid' && $ev['creator_id'] != $userId) {
-            $ev['title'] = 'Reservado'; $ev['description'] = null; $ev['location'] = null;
+        $pids          = array_map(fn($p) => (int)$p['id'], $ev['participants'] ?? []);
+        $isParticipant = in_array($userId, $pids, true);
+        $vis           = $ev['visibility'];
+
+        // Private: only participants may read it.
+        if ($vis === 'private' && !$isParticipant) $this->json(['error' => 'Sin acceso'], 403);
+
+        // Hybrid seen by a non-participant: read-only "Ocupado" + participant names.
+        if ($vis === 'hybrid' && !$isParticipant) {
+            $this->json([
+                'id'              => $ev['id'],
+                'title'           => 'Ocupado',
+                'busy'            => true,
+                'start_datetime'  => $ev['start_datetime'],
+                'end_datetime'    => $ev['end_datetime'],
+                'participant_names' => array_map(fn($p) => $p['name'], $ev['participants'] ?? []),
+            ]);
         }
         $this->json($ev);
     }
@@ -103,6 +117,11 @@ class EventController extends Controller {
 
         $ev = $this->events->findById($eventId);
         if (!$ev || $ev['group_id'] != $groupId) $this->json(['error' => 'No encontrado'], 404);
+
+        // Public events are editable by the whole group; private/hybrid only by participants.
+        if ($ev['visibility'] !== 'public' && !$this->events->isParticipant($eventId, $userId)) {
+            $this->json(['error' => 'No tenés permiso para editar este evento'], 403);
+        }
 
         $data  = $this->body();
         $scope = $data['scope'] ?? 'all'; // 'this' | 'following' | 'all'
@@ -243,6 +262,11 @@ class EventController extends Controller {
         $ev = $this->events->findById($eventId);
         if (!$ev || $ev['group_id'] != $groupId) $this->json(['error' => 'No encontrado'], 404);
 
+        // Public events are deletable by the whole group; private/hybrid only by participants.
+        if ($ev['visibility'] !== 'public' && !$this->events->isParticipant($eventId, $userId)) {
+            $this->json(['error' => 'No tenés permiso para eliminar este evento'], 403);
+        }
+
         $participants = $this->events->getParticipantUsers($eventId);
         $evTitle      = $ev['title'];
 
@@ -271,39 +295,54 @@ class EventController extends Controller {
     }
 
     private function toFC(array $ev, int $userId): ?array {
-        if ($ev['visibility'] === 'private' && $ev['creator_id'] != $userId) return null;
+        $participants  = $ev['participants'] ?? [];
+        $pids          = array_map(fn($p) => (int)$p['id'], $participants);
+        $isParticipant = in_array($userId, $pids, true);
+        $vis           = $ev['visibility'];
 
-        $isOwner  = $ev['creator_id'] == $userId;
-        $isHybrid = $ev['visibility'] === 'hybrid' && !$isOwner;
-        $color    = $ev['color'] ?? $ev['category_color'] ?? '#7c3aed';
+        // Private events are invisible to everyone except their participants.
+        if ($vis === 'private' && !$isParticipant) return null;
+
+        // "Ocupado": a hybrid event seen by someone who is NOT a participant →
+        // translucent, no details, just the participant names.
+        $isBusy    = ($vis === 'hybrid' && !$isParticipant);
+        $canEdit   = ($vis === 'public') || $isParticipant;
+        $showTitle = !$isBusy;
+        $showNames = ($vis === 'public') || $isBusy;
+        $color     = $ev['color'] ?? $ev['category_color'] ?? '#7c3aed';
+        $names     = array_map(fn($p) => $p['name'], $participants);
 
         return [
             'id'              => $ev['id'] . ($ev['instance_date'] ?? ''),
             'event_id'        => $ev['id'],
-            'title'           => $isHybrid ? 'Reservado' : $ev['title'],
+            'title'           => $isBusy ? 'Ocupado' : $ev['title'],
             'start'           => $ev['start_datetime'],
             'end'             => $ev['end_datetime'],
             'allDay'          => (bool)$ev['all_day'],
-            'backgroundColor' => $isHybrid ? '#3a3a5c' : $color,
-            'borderColor'     => $isHybrid ? '#4a4a70' : $color,
+            'backgroundColor' => $color,
+            'borderColor'     => $color,
             'textColor'       => '#ffffff',
-            'classNames'      => $isHybrid ? ['fc-hybrid'] : [],
+            'classNames'      => $isBusy ? ['fc-busy'] : [],
             'extendedProps'   => [
                 'event_id'        => $ev['id'],
-                'description'     => $isHybrid ? null : ($ev['description'] ?? null),
-                'location'        => $isHybrid ? null : ($ev['location'] ?? null),
+                'description'     => $isBusy ? null : ($ev['description'] ?? null),
+                'location'        => $isBusy ? null : ($ev['location'] ?? null),
                 'category_id'     => $ev['category_id'] ?? null,
                 'category_name'   => $ev['category_name'] ?? null,
                 'category_color'  => $ev['category_color'] ?? null,
-                'visibility'      => $ev['visibility'],
+                'visibility'      => $vis,
                 'is_recurring'    => (bool)$ev['is_recurring'],
                 'recurrence_type' => $ev['recurrence_type'] ?? null,
                 'creator_name'    => $ev['creator_name'] ?? null,
                 'creator_avatar'  => $ev['creator_avatar'] ?? null,
                 'creator_color'   => $ev['creator_color'] ?? null,
-                'is_owner'        => $isOwner,
-                'is_hybrid'       => $isHybrid,
-                'participants'    => $ev['participants'] ?? [],
+                'is_owner'        => $ev['creator_id'] == $userId,
+                'is_busy'         => $isBusy,
+                'can_edit'        => $canEdit,
+                'show_title'      => $showTitle,
+                'show_names'      => $showNames,
+                'participant_names' => $names,
+                'participants'    => $isBusy ? [] : $participants,
                 'instance_date'   => $ev['instance_date'] ?? null,
                 'has_exception'   => $ev['has_exception'] ?? false,
             ],
