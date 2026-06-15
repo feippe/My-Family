@@ -292,10 +292,12 @@
       title.textContent   = 'Nuevo evento';
       saveTxt.textContent = 'Guardar';
       if (dateStr) {
-        const d        = new Date(dateStr);
         // A datetime (long-press in week/day) includes 'T'; a date-only
         // string (month) does not → keep the 09:00–10:00 default.
         const hasTime  = typeof dateStr === 'string' && dateStr.includes('T');
+        // Date-only strings parse as UTC midnight, which shifts a day back in
+        // negative-offset timezones. Force local parsing by pinning the time.
+        const d        = hasTime ? new Date(dateStr) : new Date(dateStr + 'T00:00:00');
         document.getElementById('evStartDate').value = fmtDate(d);
         if (hasTime) {
           const end = new Date(d.getTime() + 60 * 60 * 1000);
