@@ -825,11 +825,9 @@ function applyTimeGridColors(el, colors) {
   el.style.setProperty('border-left-width', '0', 'important');
 }
 
-/* "Gabriel Feippe" → "Gabriel F."  |  "Ana" → "Ana" */
+/* "Gabriel Feippe" → "Gabriel" */
 function shortName(full) {
-  const parts = String(full).trim().split(/\s+/);
-  if (parts.length < 2) return parts[0] || '';
-  return parts[0] + ' ' + parts[parts.length - 1][0].toUpperCase() + '.';
+  return String(full).trim().split(/\s+/)[0] || '';
 }
 
 function escapeHtml(s) {
