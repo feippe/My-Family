@@ -316,7 +316,6 @@
       });
     }
     overlay.classList.add('open');
-    document.getElementById('evTitle').focus();
   };
 
   [closeBtn, cancelBtn].forEach(b => b?.addEventListener('click', () => overlay.classList.remove('open')));
