@@ -629,6 +629,20 @@
       eventClick(info) {
         const ev = info.event;
         const p  = ev.extendedProps || {};
+        // External iCal event: read-only info sheet.
+        if (p.is_external) {
+          window.openExternalEventInfo?.({
+            title:    ev.title,
+            start:    ev.start,
+            end:      ev.end,
+            allDay:   ev.allDay,
+            calendar: p.calendar_name,
+            desc:     p.description,
+            location: p.location,
+            color:    ev.backgroundColor,
+          });
+          return;
+        }
         // "Ocupado" (hybrid seen by a non-participant): read-only, just show who's busy.
         if (p.is_busy || p.can_edit === false) {
           const names = (p.participant_names || []).join(', ');
@@ -699,6 +713,48 @@
       + err.message + `</code><br><br>Presioná "Actualizar aplicación" en Ajustes.</p>`;
     console.error('[Familia] FullCalendar init error:', err);
   }
+})();
+
+/* ── External-event read-only info sheet ──────────── */
+(function initExtEventInfo() {
+  const overlay = document.getElementById('extEvOverlay');
+  if (!overlay) return;
+  const closeBtn = document.getElementById('extEvClose');
+  closeBtn?.addEventListener('click', () => overlay.classList.remove('open'));
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+
+  const DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+  function fmt(dt, allDay) {
+    if (!dt) return '';
+    const d = new Date(dt);
+    const date = `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+    if (allDay) return date;
+    const hh = String(d.getHours()).padStart(2,'0');
+    const mm = String(d.getMinutes()).padStart(2,'0');
+    return `${date}  ${hh}:${mm}`;
+  }
+
+  window.openExternalEventInfo = function({ title, start, end, allDay, calendar, desc, location, color }) {
+    document.getElementById('extEvTitle').textContent    = title || '(Sin título)';
+    document.getElementById('extEvDot').style.background = color || '#0891b2';
+    document.getElementById('extEvCalName').textContent  = calendar || '';
+
+    const startStr = fmt(start, allDay);
+    const endStr   = end ? fmt(end, allDay) : '';
+    document.getElementById('extEvTimeText').textContent = endStr && endStr !== startStr
+      ? `${startStr} → ${endStr}` : startStr;
+
+    const locRow  = document.getElementById('extEvLoc');
+    const descRow = document.getElementById('extEvDesc');
+    document.getElementById('extEvLocText').textContent  = location || '';
+    document.getElementById('extEvDescText').textContent = desc || '';
+    locRow.style.display  = location ? '' : 'none';
+    descRow.style.display = desc     ? '' : 'none';
+
+    overlay.classList.add('open');
+  };
 })();
 
 /* ── Open event modal from push notification tap ─── */

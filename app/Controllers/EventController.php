@@ -2,8 +2,10 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\ICalParser;
 use App\Models\Event;
 use App\Models\EventException;
+use App\Models\ExternalCalendar;
 use App\Services\NotificationService;
 
 class EventController extends Controller {
@@ -27,6 +29,20 @@ class EventController extends Controller {
             $fc = $this->toFC($row, $userId);
             if ($fc !== null) $formatted[] = $fc;
         }
+
+        // Merge live iCal feeds — fetched fresh every request so external
+        // calendars stay up to date. Errors are silenced per-calendar so one
+        // broken feed doesn't block the others.
+        foreach ((new ExternalCalendar())->activeForGroup($groupId) as $cal) {
+            try {
+                $ical   = ICalParser::fetch($cal['url']);
+                $events = ICalParser::parse($ical, $start, $end, $cal['color'], $cal['name'], (int)$cal['id']);
+                foreach ($events as $ev) $formatted[] = $ev;
+            } catch (\Throwable) {
+                // silently skip unreachable feeds
+            }
+        }
+
         $this->json($formatted);
     }
 

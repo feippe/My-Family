@@ -75,5 +75,9 @@ class App {
         $r->put('settings/categories/{id}',        'SettingsController@updateCategory');
         $r->delete('settings/categories/{id}',     'SettingsController@deleteCategory');
         $r->get('settings/members',                'SettingsController@members');
+        $r->get('settings/ext-calendars',          'SettingsController@externalCalendars');
+        $r->post('settings/ext-calendars',         'SettingsController@createExternalCalendar');
+        $r->put('settings/ext-calendars/{id}',     'SettingsController@updateExternalCalendar');
+        $r->delete('settings/ext-calendars/{id}',  'SettingsController@deleteExternalCalendar');
     }
 }

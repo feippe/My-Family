@@ -333,6 +333,39 @@
   </div>
 </div>
 
+<!-- External event info sheet (read-only) -->
+<div class="modal-overlay" id="extEvOverlay">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <span class="ext-ev-dot" id="extEvDot" style="flex-shrink:0;width:12px;height:12px;border-radius:50%;display:inline-block"></span>
+        <h3 class="modal-title" id="extEvTitle" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></h3>
+      </div>
+      <button class="btn-icon modal-close" id="extEvClose">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" style="gap:12px">
+      <div class="ext-ev-row" id="extEvCalendar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.6"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <span id="extEvCalName"></span>
+      </div>
+      <div class="ext-ev-row" id="extEvTime">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span id="extEvTimeText"></span>
+      </div>
+      <div class="ext-ev-row" id="extEvLoc" style="display:none">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.6"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span id="extEvLocText"></span>
+      </div>
+      <div class="ext-ev-row" id="extEvDesc" style="display:none">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.6;margin-top:2px"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span id="extEvDescText" style="white-space:pre-wrap;font-size:.85rem"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- iOS-style time picker bottom sheet -->
 <div class="ios-time-picker" id="timePicker">
   <div class="ios-picker-sheet">
