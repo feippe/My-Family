@@ -17,8 +17,7 @@
     </div>
     <div class="form-group">
       <label class="form-label">Email</label>
-      <input class="form-input" type="email" value="<?= \App\Core\View::e($user['email']) ?>" disabled>
-      <span class="form-hint">El email no se puede cambiar.</span>
+      <input class="form-input" type="email" id="profileEmail" value="<?= \App\Core\View::e($user['email']) ?>">
     </div>
     <button class="btn btn-primary" id="saveProfile">Guardar cambios</button>
   </div>
@@ -119,10 +118,14 @@
   });
 
   document.getElementById('saveProfile').addEventListener('click', async () => {
-    const name = document.getElementById('profileName').value.trim();
-    if (!name) return;
+    const name  = document.getElementById('profileName').value.trim();
+    const email = document.getElementById('profileEmail').value.trim();
+    if (!name)  { window.showToast('El nombre es requerido', 'error'); return; }
+    if (!email) { window.showToast('El email es requerido', 'error');  return; }
     try {
-      await fc_api('POST', APP_URL + '/settings/profile', { name });
+      await fc_api('POST', APP_URL + '/settings/profile', { name, email });
+      // Update the displayed email in the avatar row
+      document.querySelector('.profile-avatar-row .text-secondary').textContent = email;
       window.showToast('Perfil actualizado', 'success');
     } catch(e) { window.showToast(e.message, 'error'); }
   });

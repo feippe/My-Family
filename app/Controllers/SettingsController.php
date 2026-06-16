@@ -21,6 +21,18 @@ class SettingsController extends Controller {
 
         if (!empty($data['name'])) $update['name'] = trim($data['name']);
 
+        if (isset($data['email'])) {
+            $email = strtolower(trim($data['email']));
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $this->json(['error' => 'Email inválido'], 422);
+            }
+            $existing = $model->findByEmail($email);
+            if ($existing && (int)$existing['id'] !== $userId) {
+                $this->json(['error' => 'Ese email ya está en uso'], 422);
+            }
+            $update['email'] = $email;
+        }
+
         if (!empty($data['new_password'])) {
             $cur = $model->findById($userId);
             if (!$model->verify($data['current_password'] ?? '', $cur['password'])) {
