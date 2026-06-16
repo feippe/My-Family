@@ -558,39 +558,6 @@
     return;
   }
 
-  /* ── Client-side events cache ───────────────────────
-     Keyed by "startDate|endDate". TTL of 90 seconds so edits don't
-     show stale data for long. Cleared immediately on any mutation
-     (create / update / delete). Prefetches the next period in the
-     background so navigating forward feels instant. */
-  const evCache   = new Map();   // key → { data, ts }
-  const CACHE_TTL = 90_000;      // ms
-
-  function cacheKey(startStr, endStr) {
-    return startStr.slice(0, 10) + '|' + endStr.slice(0, 10);
-  }
-
-  function cachedFetch(startStr, endStr) {
-    const key   = cacheKey(startStr, endStr);
-    const entry = evCache.get(key);
-    if (entry && Date.now() - entry.ts < CACHE_TTL) return Promise.resolve(entry.data);
-    return fetch(APP_URL + `/api/events?start=${startStr}&end=${endStr}`,
-      { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-      .then(r => r.json())
-      .then(data => { evCache.set(key, { data, ts: Date.now() }); return data; });
-  }
-
-  // Expose so mutating call-sites can clear before refetch
-  window._clearEventsCache = () => evCache.clear();
-
-  function prefetchAdjacent(info) {
-    // Silently warm the cache for the next period (most common navigation)
-    const dur = info.end.getTime() - info.start.getTime();
-    const ns  = new Date(info.end.getTime());
-    const ne  = new Date(info.end.getTime() + dur);
-    cachedFetch(ns.toISOString(), ne.toISOString()).catch(() => {});
-  }
-
   /* ── Initialize FullCalendar ── */
   let calendar;
   try {
@@ -634,9 +601,9 @@
       },
 
       events(info, ok, fail) {
-        cachedFetch(info.startStr, info.endStr)
-          .then(data => { ok(data); prefetchAdjacent(info); })
-          .catch(fail);
+        fetch(APP_URL + `/api/events?start=${info.startStr}&end=${info.endStr}`,
+              { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+          .then(r => r.json()).then(ok).catch(fail);
       },
 
       datesSet(info) {
