@@ -35,7 +35,7 @@ class EventController extends Controller {
         // broken feed doesn't block the others.
         foreach ((new ExternalCalendar())->activeForGroup($groupId) as $cal) {
             try {
-                $ical   = ICalParser::fetch($cal['url']);
+                $ical   = ICalParser::fetchCached($cal['url']);
                 $events = ICalParser::parse($ical, $start, $end, $cal['color'], $cal['name'], (int)$cal['id']);
                 foreach ($events as $ev) $formatted[] = $ev;
             } catch (\Throwable) {

@@ -12,6 +12,21 @@ namespace App\Core;
  */
 class ICalParser {
 
+    /**
+     * Fetch with a file-based cache (default 5 min TTL).
+     * Eliminates repeated network round-trips when the user navigates the calendar.
+     */
+    public static function fetchCached(string $url, int $ttl = 300): string {
+        $file = sys_get_temp_dir() . '/familia_ical_' . md5($url) . '.cache';
+        if (is_file($file) && (time() - filemtime($file)) < $ttl) {
+            $cached = file_get_contents($file);
+            if ($cached !== false && $cached !== '') return $cached;
+        }
+        $content = self::fetch($url);
+        file_put_contents($file, $content, LOCK_EX);
+        return $content;
+    }
+
     /** Fetch raw iCal content from a URL (curl with file_get_contents fallback). */
     public static function fetch(string $url): string {
         if (function_exists('curl_init')) {

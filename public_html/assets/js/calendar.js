@@ -369,7 +369,7 @@
           if (scope !== 'all') body.instance_date = currentInstanceDate;
           await fc_api('DELETE', APP_URL + '/api/events/' + editingId, body);
           overlay.classList.remove('open');
-          window._calendar?.refetchEvents();
+          window._clearEventsCache?.(); window._calendar?.refetchEvents();
           showToast('Evento eliminado', 'success');
         } catch(e) { showToast(e.message, 'error'); }
       };
@@ -384,7 +384,7 @@
     try {
       await fc_api('DELETE', APP_URL + '/api/events/' + editingId, { scope: 'all' });
       overlay.classList.remove('open');
-      window._calendar?.refetchEvents();
+      window._clearEventsCache?.(); window._calendar?.refetchEvents();
       showToast('Evento eliminado', 'success');
     } catch(e) { showToast(e.message, 'error'); }
   });
@@ -405,7 +405,7 @@
         try {
           const res = await fc_api('PUT', APP_URL + '/api/events/' + editingId, data);
           overlay.classList.remove('open');
-          window._calendar?.refetchEvents();
+          window._clearEventsCache?.(); window._calendar?.refetchEvents();
           showToast('Evento actualizado', 'success');
         } catch(e) { showToast(e.message, 'error'); }
         finally    { saveBtn.disabled = false; }
@@ -425,7 +425,7 @@
         await fc_api('POST', APP_URL + '/api/events', data);
       }
       overlay.classList.remove('open');
-      window._calendar?.refetchEvents();
+      window._clearEventsCache?.(); window._calendar?.refetchEvents();
       showToast(editingId ? 'Evento actualizado' : '¡Evento creado!', 'success');
     } catch(e) {
       showToast(e.message, 'error');
@@ -558,6 +558,39 @@
     return;
   }
 
+  /* ── Client-side events cache ───────────────────────
+     Keyed by "startDate|endDate". TTL of 90 seconds so edits don't
+     show stale data for long. Cleared immediately on any mutation
+     (create / update / delete). Prefetches the next period in the
+     background so navigating forward feels instant. */
+  const evCache   = new Map();   // key → { data, ts }
+  const CACHE_TTL = 90_000;      // ms
+
+  function cacheKey(startStr, endStr) {
+    return startStr.slice(0, 10) + '|' + endStr.slice(0, 10);
+  }
+
+  function cachedFetch(startStr, endStr) {
+    const key   = cacheKey(startStr, endStr);
+    const entry = evCache.get(key);
+    if (entry && Date.now() - entry.ts < CACHE_TTL) return Promise.resolve(entry.data);
+    return fetch(APP_URL + `/api/events?start=${startStr}&end=${endStr}`,
+      { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(r => r.json())
+      .then(data => { evCache.set(key, { data, ts: Date.now() }); return data; });
+  }
+
+  // Expose so mutating call-sites can clear before refetch
+  window._clearEventsCache = () => evCache.clear();
+
+  function prefetchAdjacent(info) {
+    // Silently warm the cache for the next period (most common navigation)
+    const dur = info.end.getTime() - info.start.getTime();
+    const ns  = new Date(info.end.getTime());
+    const ne  = new Date(info.end.getTime() + dur);
+    cachedFetch(ns.toISOString(), ne.toISOString()).catch(() => {});
+  }
+
   /* ── Initialize FullCalendar ── */
   let calendar;
   try {
@@ -601,9 +634,9 @@
       },
 
       events(info, ok, fail) {
-        fetch(APP_URL + `/api/events?start=${info.startStr}&end=${info.endStr}`,
-              { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-          .then(r => r.json()).then(ok).catch(fail);
+        cachedFetch(info.startStr, info.endStr)
+          .then(data => { ok(data); prefetchAdjacent(info); })
+          .catch(fail);
       },
 
       datesSet(info) {
