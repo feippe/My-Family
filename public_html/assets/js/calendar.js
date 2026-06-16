@@ -742,7 +742,10 @@
     document.getElementById('extEvCalName').textContent  = calendar || '';
 
     const startStr = fmt(start, allDay);
-    const endStr   = end ? fmt(end, allDay) : '';
+    // iCal (and FullCalendar) all-day DTEND is exclusive (day after the last
+    // day), so subtract 1 day before displaying to get the inclusive end date.
+    const displayEnd = (allDay && end) ? new Date(new Date(end).getTime() - 864e5) : end;
+    const endStr = displayEnd ? fmt(displayEnd, allDay) : '';
     document.getElementById('extEvTimeText').textContent = endStr && endStr !== startStr
       ? `${startStr} → ${endStr}` : startStr;
 
