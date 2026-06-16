@@ -560,7 +560,7 @@
         const titleCls = p.show_title === false ? 'fc-event-title fc-event-busy-label' : 'fc-event-title';
         html += `<div class="${titleCls}">${escapeHtml(arg.event.title || '')}</div>`;
         if (p.show_names && p.participant_names && p.participant_names.length) {
-          html += `<div class="fc-event-names">${escapeHtml(p.participant_names.join(', '))}</div>`;
+          html += `<div class="fc-event-names">${escapeHtml(p.participant_names.map(shortName).join(', '))}</div>`;
         }
         return { html };
       },
@@ -646,7 +646,7 @@
         }
         // "Ocupado" (hybrid seen by a non-participant): read-only, just show who's busy.
         if (p.is_busy || p.can_edit === false) {
-          const names = (p.participant_names || []).join(', ');
+          const names = (p.participant_names || []).map(shortName).join(', ');
           window.showToast?.(names ? `Ocupado — ${names}` : 'Horario ocupado', 'info');
           return;
         }
@@ -824,6 +824,13 @@ function applyTimeGridColors(el, colors) {
   el.style.setProperty('background-repeat', 'no-repeat, no-repeat', 'important');
   el.style.setProperty('border', '1px solid rgba(255,255,255,.16)', 'important');
   el.style.setProperty('border-left-width', '0', 'important');
+}
+
+/* "Gabriel Feippe" → "Gabriel F."  |  "Ana" → "Ana" */
+function shortName(full) {
+  const parts = String(full).trim().split(/\s+/);
+  if (parts.length < 2) return parts[0] || '';
+  return parts[0] + ' ' + parts[parts.length - 1][0].toUpperCase() + '.';
 }
 
 function escapeHtml(s) {
