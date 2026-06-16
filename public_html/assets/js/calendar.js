@@ -270,15 +270,51 @@
         if (p.is_recurring) {
           recurringChk.checked = true;
           recurrencePanel.style.display = 'flex';
-          document.getElementById('evRecurrenceType').value = p.recurrence_type || 'weekly';
-          const typeBtn = document.querySelector(`.rec-type-btn[data-type="${p.recurrence_type}"]`);
+          const rtype = p.recurrence_type || 'weekly';
+          document.getElementById('evRecurrenceType').value = rtype;
+          const typeBtn = document.querySelector(`.rec-type-btn[data-type="${rtype}"]`);
           if (typeBtn) {
             document.querySelectorAll('.rec-type-btn').forEach(b => b.classList.remove('active'));
             typeBtn.classList.add('active');
-            document.getElementById('recWeekly').style.display  = p.recurrence_type === 'weekly'  ? '' : 'none';
-            document.getElementById('recMonthly').style.display = p.recurrence_type === 'monthly' ? '' : 'none';
-            document.getElementById('recAnnual').style.display  = p.recurrence_type === 'annual'  ? '' : 'none';
+            document.getElementById('recWeekly').style.display  = rtype === 'weekly'  ? '' : 'none';
+            document.getElementById('recMonthly').style.display = rtype === 'monthly' ? '' : 'none';
+            document.getElementById('recAnnual').style.display  = rtype === 'annual'  ? '' : 'none';
           }
+
+          // Repopulate rule details so they're preserved when saving
+          const rule = p.recurrence_rule || {};
+          if (rtype === 'weekly' && rule.days) {
+            document.querySelectorAll('.weekday-cb').forEach(cb => {
+              cb.checked = rule.days.includes(cb.value);
+            });
+          }
+          if (rtype === 'monthly') {
+            const mode = rule.mode || 'day_of_month';
+            const modeRadio = document.querySelector(`[name="rec_monthly_mode"][value="${mode}"]`);
+            if (modeRadio) { modeRadio.checked = true; modeRadio.dispatchEvent(new Event('change')); }
+            if (mode === 'day_of_month' && rule.day)
+              document.getElementById('recMonthDay').value = rule.day;
+            if (mode === 'day_of_week') {
+              if (rule.occurrence) document.getElementById('recMonthOccurrence').value = rule.occurrence;
+              if (rule.weekday)    document.getElementById('recMonthWeekday').value    = rule.weekday;
+            }
+          }
+          if (rtype === 'annual') {
+            const mode = rule.mode || 'fixed_date';
+            const modeRadio = document.querySelector(`[name="rec_annual_mode"][value="${mode}"]`);
+            if (modeRadio) { modeRadio.checked = true; modeRadio.dispatchEvent(new Event('change')); }
+            if (mode === 'fixed_date') {
+              if (rule.month) document.getElementById('recAnnualMonth').value = rule.month;
+              if (rule.day)   document.getElementById('recAnnualDay').value   = rule.day;
+            }
+            if (mode === 'day_of_week') {
+              if (rule.month)      document.getElementById('recAnnualWeekMonth').value  = rule.month;
+              if (rule.occurrence) document.getElementById('recAnnualOccurrence').value = rule.occurrence;
+              if (rule.weekday)    document.getElementById('recAnnualWeekday').value    = rule.weekday;
+            }
+          }
+          if (p.recurrence_end)
+            document.getElementById('evRecurrenceEnd').value = p.recurrence_end;
         }
       }
 

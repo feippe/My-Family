@@ -358,6 +358,10 @@ class EventController extends Controller {
                 'visibility'      => $vis,
                 'is_recurring'    => (bool)$ev['is_recurring'],
                 'recurrence_type' => $ev['recurrence_type'] ?? null,
+                'recurrence_rule' => isset($ev['recurrence_rule'])
+                    ? (is_string($ev['recurrence_rule']) ? json_decode($ev['recurrence_rule'], true) : $ev['recurrence_rule'])
+                    : null,
+                'recurrence_end'  => $ev['recurrence_end'] ?? null,
                 'creator_name'    => $ev['creator_name'] ?? null,
                 'creator_avatar'  => $ev['creator_avatar'] ?? null,
                 'creator_color'   => $ev['creator_color'] ?? null,
