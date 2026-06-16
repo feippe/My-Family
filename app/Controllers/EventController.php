@@ -111,7 +111,7 @@ class EventController extends Controller {
 
         $eventId      = $this->events->create($eventData);
         $participants = $data['participants'] ?? [$userId];
-        if (!in_array($userId, $participants)) $participants[] = $userId;
+        if (empty($participants)) $this->json(['error' => 'El evento debe tener al menos un participante'], 422);
         $this->events->setParticipants($eventId, $participants);
 
         $created = $this->events->withParticipants($eventId);
@@ -232,7 +232,7 @@ class EventController extends Controller {
         $newParticipants = null;
         if (isset($data['participants'])) {
             $parts = $data['participants'];
-            if (!in_array($userId, $parts)) $parts[] = $userId;
+            if (empty($parts)) $this->json(['error' => 'El evento debe tener al menos un participante'], 422);
             $this->events->setParticipants($eventId, $parts);
             $newParticipants = $this->events->getParticipantUsers($eventId);
         }

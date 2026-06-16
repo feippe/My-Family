@@ -310,9 +310,9 @@
           document.getElementById('evEndTime').value   = '10:00';
         }
       }
-      // Check current user by default
-      document.querySelectorAll('.participant-check').forEach(c => {
-        if (c.hasAttribute('disabled')) c.checked = true;
+      // Check current user by default when creating a new event
+      document.querySelectorAll('.participant-check[data-self="1"]').forEach(c => {
+        c.checked = true;
       });
     }
     overlay.classList.add('open');
@@ -359,6 +359,7 @@
     const data = collectForm();
     if (!data.title) { showToast('El título es requerido', 'error'); return; }
     if (!document.getElementById('evStartDate').value) { showToast('Seleccioná una fecha', 'error'); return; }
+    if (!data.participants.length) { showToast('El evento debe tener al menos un participante', 'error'); return; }
 
     if (editingId && document.getElementById('evRecurring').checked) {
       // Show scope dialog for edits

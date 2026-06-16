@@ -132,7 +132,7 @@
             <label class="participant-chip" data-id="<?= $m['id'] ?>">
               <input type="checkbox" name="participants[]" value="<?= $m['id'] ?>"
                      class="participant-check"
-                     <?= $m['id'] == ($currentUser['id'] ?? 0) ? 'checked disabled' : '' ?>>
+                     <?= $m['id'] == ($currentUser['id'] ?? 0) ? 'checked' : '' ?> data-self="<?= $m['id'] == ($currentUser['id'] ?? 0) ? '1' : '0' ?>">
               <span class="avatar-xs" style="background:<?= \App\Core\View::e($m['color']) ?>">
                 <?= \App\Core\View::e($m['avatar'] ?? mb_strtoupper(mb_substr($m['name'],0,1))) ?>
               </span>
