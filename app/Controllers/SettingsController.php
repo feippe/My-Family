@@ -60,12 +60,12 @@ class SettingsController extends Controller {
         $data    = $this->body();
         $groupId = $this->auth->groupId();
 
-        if (empty($data['name']) || empty($data['color'])) {
-            $this->json(['error' => 'Nombre y color son requeridos'], 422);
+        if (empty($data['name'])) {
+            $this->json(['error' => 'El nombre es requerido'], 422);
         }
 
         $model = new Category();
-        $id    = $model->create($groupId, $data['name'], $data['color'], $data['icon'] ?? '📅');
+        $id    = $model->create($groupId, $data['name'], $data['color'] ?? '#0ea5e9', $data['icon'] ?? '📅');
         $cat   = $model->findById($id);
         $this->json(['success' => true, 'category' => $cat]);
     }
@@ -127,9 +127,12 @@ class SettingsController extends Controller {
         if (!filter_var($url, FILTER_VALIDATE_URL))  $this->json(['error' => 'URL inválida'], 422);
         if (!preg_match('/^#[0-9a-f]{6}$/', $color)) $color = '#0891b2';
 
-        // Quick reachability check
+        // Verify URL returns valid iCal content
         try {
-            \App\Core\ICalParser::fetch($url);
+            $raw = \App\Core\ICalParser::fetch($url);
+            if (!str_contains($raw, 'BEGIN:VCALENDAR')) {
+                $this->json(['error' => 'La URL no devuelve un calendario iCal válido. Para Google Calendar usá la URL ICS (termina en /basic.ics), no la URL de visualización.'], 422);
+            }
         } catch (\Throwable $e) {
             $this->json(['error' => 'No se pudo acceder a la URL: ' . $e->getMessage()], 422);
         }
